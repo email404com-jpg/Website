@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Noble SMP — The Best Vanilla Minecraft Server</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #060913;       
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ── TOP LEFT MINI BRANDING LOGO (CRAZYMC STYLE Layout + NOBLE THEME) ── */
+    .mc-top-logo {
+      position: fixed;
+      top: 20px;
+      left: 25px;
+      z-index: 1000;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      user-select: none;
+    }
+
+    .mc-logo-text {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 16px;
+      font-weight: bold;
+      color: #e2e8f0; /* Stone White */
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      /* Detailed 3D Text Shadow mimicking CrazyMC layered text mesh */
+      text-shadow: 
+        0 1px 0 #94a3b8,
+        0 2px 0 #64748b,
+        0 3px 0 #475569,
+        0 4px 0 #334155,
+        0 5px 0 #1e293b,
+        0 6px 0 #0f172a,
+        0 7px 8px rgba(0, 0, 0, 0.8);
+      transition: transform 0.2s;
+    }
+
+    .mc-logo-text span {
+      color: #22c55e; /* Vibrant Theme Green */
+      text-shadow: 
+        0 1px 0 #16a34a,
+        0 2px 0 #15803d,
+        0 3px 0 #166534,
+        0 4px 0 #14532d,
+        0 5px 0 #052e16,
+        0 6px 0 #022c22,
+        0 7px 8px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Green base accent line matching the underlying box shape from CrazyMC */
+    .mc-logo-accent {
+      width: 100%;
+      height: 5px;
+      background: #15803d;
+      margin-top: 8px;
+      border-radius: 2px;
+      box-shadow: 
+        0 2px 0 #052e16,
+        0 4px 6px rgba(0, 0, 0, 0.6);
+    }
+
+    .mc-top-logo:hover .mc-logo-text {
+      transform: translateY(-1px);
+    }
+
+    /* ── FLOATING DISCORD CONTAINER (GREEN WEBSITE THEMED) ── */
+    .mc-floating-dc {
+      position: fixed;
+      top: 20px;
+      right: 25px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      background: rgba(6, 9, 19, 0.85);
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      backdrop-filter: blur(6px);
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .mc-floating-dc:hover {
+      transform: translateY(-2px);
+      border-color: #22c55e;
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+    }
+
+    .mc-dc-text {
+      text-align: right;
+    }
+
+    .mc-dc-status {
+      font-size: 11px;
+      font-weight: 700;
+      color: #4ade80;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .mc-dc-action {
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+
+    .mc-dc-icon-wrapper {
+      background: #22c55e;
+      width: 32px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+      transition: background-color 0.2s;
+    }
+
+    .mc-floating-dc:hover .mc-dc-icon-wrapper {
+      background: #16a34a;
+    }
+
+    .mc-dc-icon-wrapper svg {
+      width: 20px;
+      height: 20px;
+      fill: #060913;
+    }
+
+    /* ── HERO SECTION WITH FULL IMAGE BACKGROUND ── */
+    .mc-hero {
+      background: linear-gradient(180deg, rgba(6, 9, 19, 0.1) 0%, rgba(6, 9, 19, 0.8) 75%, #060913 100%),
+                  url('background.png') no-repeat center top;
+      background-size: cover;
+      padding: 10rem 2rem 5rem; 
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      /* Border removed here to get rid of the white line cutting above the stats bar */
+    }
+
+    /* Centered Brand Logo Layer — Now visibly larger on desktop screen layouts */
+    .mc-hero-logo {
+      width: 1080px;
+      max-width: 150%;
+      height: auto;
+      margin: 0 auto 2rem;
+      display: block;
+      filter: drop-shadow(0 0 35px rgba(34, 197, 94, 0.5)) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7));
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .mc-hero-badge {
+      display: inline-block;
+      background: rgba(6, 9, 19, 0.8);
+      border: 1px solid rgba(34, 197, 94, 0.5);
+      color: #4ade80;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 16px;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      backdrop-filter: blur(4px);
+    }
+
+    .mc-hero-sub {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(12px, 2vw, 16px);
+      color: #f59e0b;            
+      margin-bottom: 1.5rem;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    }
+
+    .mc-hero-desc {
+      color: #ffffff;
+      font-size: 15px;
+      max-width: 580px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+      font-weight: 500;
+    }
+
+    /* ── INTERACTIVE IP BOX ── */
+    .mc-ip-box {
+      display: inline-flex;
+      align-items: center;
+      background: #0b1510;
+      border: 1.5px solid #22c55e;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .mc-ip-box:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 35px rgba(34, 197, 94, 0.4);
+      border-color: #ffffff;
+    }
+
+    .mc-ip-label {
+      background: #22c55e;
+      color: #060913;
+      padding: 12px 16px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .mc-ip-value {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 12px;
+      color: #e2e8f0;
+      padding: 12px 20px;
+      letter-spacing: 1px;
+    }
+
+    /* ── WHITELIST CALLOUT MESSAGE ── */
+    .mc-whitelist-callout {
+      display: inline-block;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      color: #ffffff;
+      background: rgba(6, 9, 19, 0.8);
+      border: 1px dashed rgba(34, 197, 94, 0.4);
+      padding: 14px 24px;
+      border-radius: 8px;
+      letter-spacing: 1px;
+      line-height: 1.8;
+      max-width: 500px;
+      margin: 0 auto;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+
+    .mc-whitelist-callout span {
+      color: #22c55e;
+      font-weight: bold;
+    }
+
+    /* ── STATS BAR ── */
+    .mc-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      padding: 2rem;
+      background: #090d1a;
+      border-bottom: 1px solid rgba(34, 197, 94, 0.1);
+    }
+
+    .mc-stat {
+      text-align: center;
+      padding: 1.2rem;
+      background: #0c1224;
+      border-radius: 10px;
+      border: 1px solid #141f38;
+      transition: border-color 0.2s;
+    }
+    
+    .mc-stat:hover { border-color: rgba(34, 197, 94, 0.3); }
+
+    .mc-stat-num {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 16px;
+      color: #4ade80;
+      margin-bottom: 8px;
+    }
+
+    .mc-stat-label {
+      font-size: 11px;
+      color: #475569;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── SECTIONS ── */
+    .mc-section { padding: 5rem 2rem; }
+    .mc-section-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(14px, 2vw, 18px);
+      color: #fff;
+      text-align: center;
+      margin-bottom: 0.75rem;
+    }
+    .mc-section-sub { color: #475569; text-align: center; font-size: 14px; margin-bottom: 3.5rem; }
+
+    /* ── GAME MODES ── */
+    .mc-modes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .mc-mode-card {
+      background: #0c1224;
+      border: 1px solid #141f38;
+      border-radius: 12px;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+    .mc-mode-card:hover {
+      border-color: #22c55e;
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(6,9,19,0.6);
+    }
+
+    .mc-mode-icon { font-size: 38px; margin-bottom: 1rem; display: block; }
+    .mc-mode-name {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 12px;
+      color: #4ade80;
+      margin-bottom: 0.85rem;
+      line-height: 1.5;
+    }
+    .mc-mode-desc { font-size: 13.5px; color: #94a3b8; line-height: 1.6; }
+
+    /* ── FEATURES ── */
+    .mc-features {
+      background: #090d1a;
+      border-top: 1px solid rgba(34, 197, 94, 0.1);
+      border-bottom: 1px solid rgba(34, 197, 94, 0.1);
+    }
+
+    .mc-features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .mc-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 1.5rem;
+      background: #0c1224;
+      border-radius: 10px;
+      border: 1px solid #141f38;
+      transition: border-color 0.2s;
+    }
+    
+    .mc-feature:hover { border-color: rgba(34, 197, 94, 0.25); }
+
+    .mc-feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      background: rgba(34, 197, 94, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .mc-feature-title { font-weight: 600; font-size: 14px; color: #e2e8f0; margin-bottom: 6px; }
+    .mc-feature-desc { font-size: 13px; color: #64748b; line-height: 1.5; }
+
+    /* ── JOIN CTA ── */
+    .mc-join {
+      text-align: center;
+      padding: 6rem 2rem;
+      background: linear-gradient(180deg, #060913 0%, #091710 50%, #060913 100%);
+    }
+
+    .mc-join-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(14px, 2.5vw, 22px);
+      color: #fff;
+      margin-bottom: 1rem;
+      line-height: 1.6;
+    }
+
+    .mc-join-desc { color: #94a3b8; font-size: 14px; margin-bottom: 2.5rem; max-width: 500px; margin: 0 auto 2.5rem; line-height: 1.6; }
+
+    .mc-tags { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 2.5rem; max-width: 600px; margin: 0 auto 2.5rem; }
+    .mc-tag {
+      background: rgba(34, 197, 94, 0.05);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      font-size: 11px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    /* ── FOOTER ── */
+    .mc-footer {
+      background: #03050a;
+      border-top: 1px solid #141f38;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      color: #475569;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .mc-footer span { color: #22c55e; }
+
+    /* ── ONLINE DOT PULSE ── */
+    .mc-online-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      display: inline-block;
+      margin-right: 8px;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.9); }
+    }
+
+    hr.mc-divider { border: none; border-top: 1px solid #141f38; }
+
+    @media (max-width: 650px) {
+      .mc-hero { padding: 9rem 1rem 4rem; }
+      .mc-section { padding: 4rem 1rem; }
+      .mc-top-logo { top: 12px; left: 12px; }
+      .mc-logo-text { font-size: 11px; text-shadow: 0 2px 0 #475569, 0 3px 4px rgba(0,0,0,0.8); }
+      .mc-floating-dc { top: 12px; right: 12px; padding: 6px 12px; }
+      .mc-dc-status { font-size: 9px; }
+      .mc-dc-action { font-size: 10px; }
+      .mc-dc-icon-wrapper { width: 30px; height: 30px; }
+      .mc-dc-icon-wrapper svg { width: 16px; height: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP LEFT BRANDING LOGO COMPONENT -->
+  <div class="mc-top-logo">
+    <div class="mc-logo-text">Noble <span>SMP</span></div>
+    <div class="mc-logo-accent"></div>
+  </div>
+
+  <!-- FLOATING DISCORD CONTAINER -->
+  <a href="https://discord.gg/zZg7D3N3BH" target="_blank" class="mc-floating-dc">
+    <div class="mc-dc-text">
+      <div class="mc-dc-status">Discord</div>
+      <div class="mc-dc-action">Click to Join</div>
+    </div>
+    <div class="mc-dc-icon-wrapper">
+      <svg viewBox="0 0 127.14 96.36">
+        <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.18,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a74.37,74.37,0,0,0,6.72-11A68.17,68.17,0,0,1,28,80.17c1-.71,1.93-1.46,2.84-2.23a74.12,74.12,0,0,0,65.48,0c.9.77,1.88,1.52,2.84,2.23a67.89,67.89,0,0,1-10.75,5.17,74.62,74.62,0,0,0,6.72,11,105.51,105.51,0,0,0,31.06-18.83C129.66,50.12,123.63,27.27,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.86,46,53.86,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.1,46,96.1,53,91,65.69,84.69,65.69Z"/>
+      </svg>
+    </div>
+  </a>
+
+  <!-- HERO SECTION WITH FULL IMAGE BACKGROUND -->
+  <section class="mc-hero">
+    
+    <div class="mc-hero-badge">⚔ Java + Bedrock + Cracked</div>  
+
+    <!-- Main Server Large Logo -->
+    <img src="icon.png" alt="Noble SMP Logo" class="mc-hero-logo">
+
+    <p class="mc-hero-sub">The Best Vanilla Minecraft Server</p>  
+
+    <p class="mc-hero-desc">
+      Hey there! Welcome to Noble SMP — the ultimate Minecraft server for Survival enthusiasts. 
+      Play along with friends, team up, and experience the classic feel of Vanilla Minecraft optimized perfectly for peak performance!
+    </p>
+
+    <!-- Copy Box Container -->
+    <div class="mc-ip-box" onclick="copyIP(this)" title="Click to copy Server IP Address!">
+      <span class="mc-ip-label">IP (CLICK TO COPY)</span>
+      <span class="mc-ip-value" id="server-ip">noblesmp1.mcsh.io</span>  
+    </div>
+
+    <br>
+    <!-- MAIN INSTRUCTIONAL BOX -->
+    <div class="mc-whitelist-callout">
+      THE SERVER IS <span>WHITELISTED</span>.<br>JOIN THE DISCORD SERVER TO GET ACCESS!
+    </div>
+  </section>
+
+  <!-- STATS BAR -->
+  <div class="mc-stats">
+    <div class="mc-stat">
+      <div class="mc-stat-num">24/7</div>
+      <div class="mc-stat-label">Uptime</div>
+    </div>
+    <div class="mc-stat">
+      <div class="mc-stat-num" style="color:#22c55e">
+        <span class="mc-online-dot"></span>Online
+      </div>
+      <div class="mc-stat-label">Server Status</div>
+    </div>
+    <div class="mc-stat">
+      <div class="mc-stat-num" style="color:#f59e0b">1.16 – 1.21.x</div>  
+      <div class="mc-stat-label">Supported Versions</div>
+    </div>
+    <div class="mc-stat">
+      <div class="mc-stat-num" style="color:#a855f7">Locked</div>
+      <div class="mc-stat-label">Whitelist Only</div>
+    </div>
+  </div>
+
+  <!-- GAME MODES -->
+  <section class="mc-section" id="gamemodes">
+    <h2 class="mc-section-title">Game Modes</h2>
+    <p class="mc-section-sub">Get whitelisted via Discord and kickstart your story.</p>
+
+    <div class="mc-modes-grid">
+      <div class="mc-mode-card">
+        <span class="mc-mode-icon">💎</span>
+        <div class="mc-mode-name">Classic Survival</div>
+        <div class="mc-mode-desc">Pure survival experience with minor quality-of-life additions, global secure trading hubs, and unique server events.</div>
+      </div>
+      
+      <div class="mc-mode-card">
+        <span class="mc-mode-icon">⚔️</span>
+        <div class="mc-mode-name">PvP & Economy</div>
+        <div class="mc-mode-desc">Engage in community safe duels, build massive server economies, market player shops, and claim high tiers.</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="mc-divider">
+
+  <!-- FEATURES / WHY US -->
+  <section class="mc-section mc-features">
+    <h2 class="mc-section-title">Why Noble SMP?</h2>
+    <p class="mc-section-sub">Everything you need for the perfect Minecraft experience</p>
+
+    <div class="mc-features-grid">
+      <div class="mc-feature">
+        <div class="mc-feature-icon">🛡️</div>
+        <div>
+          <div class="mc-feature-title">Anti-Cheat Protection</div>
+          <div class="mc-feature-desc">Advanced anti-hack background systems keep gameplay completely fair.</div>
+        </div>
+      </div>
+
+      <div class="mc-feature">
+        <div class="mc-feature-icon">🌏</div>
+        <div>
+          <div class="mc-feature-title">Low Ping Asia Nodes</div>
+          <div class="mc-feature-desc">Highly optimized server hosting for Indian and Asian regional players.</div>
+        </div>
+      </div>
+
+      <div class="mc-feature">
+        <div class="mc-feature-icon">🎁</div>
+        <div>
+          <div class="mc-feature-title">Events & Giveaways</div>
+          <div class="mc-feature-desc">Regular build competitions, custom tournaments, and amazing prizes.</div>
+        </div>
+      </div>
+
+      <div class="mc-feature">
+        <div class="mc-feature-icon">🔓</div>
+        <div>
+          <div class="mc-feature-title">Cracked & Premium</div>
+          <div class="mc-feature-desc">No entries boundaries — join securely using your preferred game client choice.</div>
+        </div>
+      </div>
+
+      <div class="mc-feature">
+        <div class="mc-feature-icon">🤝</div>
+        <div>
+          <div class="mc-feature-title">Friendly Staff</div>
+          <div class="mc-feature-desc">An active community moderation team ready to help resolve issues 24/7.</div>
+        </div>
+      </div>
+
+      <div class="mc-feature">
+        <div class="mc-feature-icon">⚙️</div>
+        <div>
+          <div class="mc-feature-title">Custom Plugins</div>
+          <div class="mc-feature-desc">Unique adjustments built smoothly to serve our worlds' overall integrity.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- JOIN / CTA SECTION -->
+  <section class="mc-join">
+    <h2 class="mc-join-title">Ready to Join the<br>Noble SMP Family?</h2>
+    <p class="mc-join-desc">
+      Connect instantly and kick off your brand new adventure. Make sure to claim your whitelist status in our Discord hub first!
+    </p>
+
+    <div class="mc-tags">
+      <span class="mc-tag">Java Edition</span>
+      <span class="mc-tag">Bedrock / PE</span>
+      <span class="mc-tag">Cracked Supported</span>
+      <span class="mc-tag">Versions 1.16–1.21.x</span>
+      <span class="mc-tag">Whitelisted Access</span>
+      <span class="mc-tag">Free to Play</span>
+    </div>
+
+    <div class="mc-ip-box" onclick="copyIP(this)" title="Click to copy Server IP!">
+      <span class="mc-ip-label">IP</span>
+      <span class="mc-ip-value">noblesmp1.mcsh.io</span>  
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="mc-footer">
+    &copy; 2026 <span>Noble SMP</span> — The Best Survival Minecraft Server &nbsp;|&nbsp; noblesmp1.mcsh.io
+  </footer>
+
+  <!-- Instant Clipboard Copy JavaScript -->
+  <script>
+    function copyIP(element) {
+      const ipText = document.getElementById('server-ip').innerText;
+      navigator.clipboard.writeText(ipText).then(() => {
+        const label = element.querySelector('.mc-ip-label');
+        const originalText = label.innerText;
+        label.innerText = "COPIED!";
+        label.style.background = "#22c55e";
+        setTimeout(() => {
+          label.innerText = originalText;
+          label.style.background = "";
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>
