@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, JetBrains_Mono } from "next/font/google";
+import { site } from "@/lib/site";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -14,13 +15,33 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
+const title = `${site.name} — Minecraft Practice PvP & Survival`;
+
 export const metadata: Metadata = {
+  metadataBase: new URL(site.url),
   title: {
-    default: "Jack Network — Minecraft Practice PvP & Survival",
-    template: "%s — Jack Network",
+    default: title,
+    template: `%s — ${site.name}`,
   },
-  description:
-    "Jack Network is a Minecraft server running practice PvP and survival. Server address and details to follow.",
+  description: site.description,
+  applicationName: site.name,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: site.url,
+    siteName: site.name,
+    title,
+    description: site.description,
+    locale: "en_US",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: site.name }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description: site.description,
+    images: ["/og.png"],
+  },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
