@@ -62,7 +62,7 @@ export function CopyAddress({
         {variant === "primary" && (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 -left-full w-[200%] -translate-x-px bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-[var(--duration-slow)] ease-[var(--ease)] group-hover:translate-x-full"
+            className="pointer-events-none absolute inset-y-0 left-0 w-[120%] -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-[var(--duration-slow)] ease-[var(--ease)] group-hover:translate-x-[60%]"
           />
         )}
         <span className="relative z-10 inline-flex items-center gap-2">
