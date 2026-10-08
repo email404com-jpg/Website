@@ -1,0 +1,1364 @@
+JACK NETWORK — MASTER WEBSITE DESIGN & DEVELOPMENT PROMPT
+
+You are the senior product designer, brand designer, UX/UI designer, frontend engineer, accessibility specialist, performance engineer, and visual QA engineer responsible for building the official Jack Network website.
+
+Your goal is NOT to simply generate a functional website.
+
+Your goal is to create a premium, distinctive, production-ready digital experience for Jack Network that looks intentionally designed by a highly experienced human design team.
+
+The final result must feel:
+
+Premium. Technical. Modern. Powerful. Clean. Confident. Distinctive.
+
+Most importantly:
+
+DO NOT MAKE THE WEBSITE LOOK AI-GENERATED.
+
+---
+
+1. DESIGN REFERENCES AND SKILLS
+
+Use these resources as design guidance:
+
+Taste Skill
+
+https://github.com/Leonxlnx/taste-skill
+
+Vercel Web Design Guidelines
+
+https://github.com/vercel-labs/agent-skills/tree/main/skills/web-design-guidelines
+
+DESIGN.md Collection
+
+https://github.com/voltagent/awesome-design-md
+
+Image-to-Code Skill
+
+https://github.com/Leonxlnx/taste-skill/tree/main/skills/image-to-code-skill
+
+Use these resources to improve design quality, UX, visual hierarchy, accessibility, implementation quality, and image-to-code workflows.
+
+IMPORTANT:
+
+These resources are references, not templates.
+
+Do NOT copy their:
+
+- Branding
+- Layouts
+- Components
+- Copy
+- Visual identity
+- Page structure
+
+Extract useful principles and create an original Jack Network design system.
+
+---
+
+2. FIRST: UNDERSTAND THE PROJECT
+
+Before writing substantial code, understand:
+
+- What Jack Network is
+- What the website is supposed to accomplish
+- Who the visitors are
+- What services/products are being presented
+- What the primary conversion/action is
+- What pages are required
+- What content is available
+
+If important information is missing, ask me instead of inventing major details.
+
+Do not make important assumptions about the business.
+
+Minor implementation decisions may be made independently when they do not affect the brand, business logic, or content.
+
+---
+
+3. JACK NETWORK BRAND
+
+The website represents:
+
+Jack Network
+
+The brand should feel like a serious technology infrastructure and gaming-network company.
+
+Visual personality:
+
+- Premium
+- Technical
+- Powerful
+- Reliable
+- Modern
+- Precise
+- Confident
+- Dark
+- Professional
+- Slightly aggressive
+- Gaming-aware
+
+BUT:
+
+Do not make it look like a stereotypical gaming website.
+
+Avoid:
+
+- RGB aesthetics
+- Cyberpunk overload
+- Neon everywhere
+- Anime decoration
+- Fire graphics
+- Lightning graphics
+- Excessive particles
+- Excessive gaming clichés
+- Purple AI gradients
+- Cheap gamer UI
+
+The desired direction is:
+
+Premium infrastructure company + modern gaming technology brand.
+
+---
+
+4. JACK NETWORK COLOR SYSTEM
+
+The primary visual hierarchy is:
+
+BLACK → SILVER → RED
+
+Black is the foundation.
+
+Silver provides typography, structure, and sophistication.
+
+Red communicates interaction, importance, and brand energy.
+
+---
+
+BLACK
+
+Use black and near-black tones for:
+
+- Main backgrounds
+- Navigation
+- Sections
+- Cards
+- Panels
+- Footer
+- Hero backgrounds
+
+Suggested values:
+
+#050505
+#080808
+#0D0D0D
+#111111
+#151515
+
+Do not make everything pure #000000.
+
+Use subtle surface differences to create depth.
+
+---
+
+SILVER
+
+Silver is the primary neutral.
+
+Use it for:
+
+- Headings
+- Body text
+- Secondary text
+- Borders
+- Dividers
+- Icons
+- Metadata
+- Navigation
+- Supporting UI
+
+Suggested values:
+
+#E5E5E5
+#B8B8B8
+#858585
+#4A4A4A
+
+Avoid using pure white everywhere.
+
+---
+
+RED
+
+Red is the primary interactive accent.
+
+Use it for:
+
+- Primary CTA buttons
+- Links
+- Hover states
+- Active states
+- Selected navigation
+- Important indicators
+- Interactive borders
+- Important UI accents
+
+Suggested starting values:
+
+#E10600
+#A80000
+#FF2A24
+
+Red must remain an accent.
+
+Do NOT make the entire website red.
+
+Target approximate visual balance:
+
+70–80% black
+
+15–25% silver/neutral
+
+5–10% red
+
+If everything is red, nothing feels important.
+
+---
+
+5. NO AUTOMATIC GRADIENTS
+
+Gradients are NOT the default solution.
+
+Do not automatically add:
+
+- Purple gradients
+- Blue gradients
+- Red-to-purple gradients
+- Rainbow gradients
+- AI-style mesh gradients
+
+Prefer creating depth through:
+
+- Surface contrast
+- Borders
+- Typography
+- Spacing
+- Composition
+- Subtle shadows
+- Controlled lighting
+
+Use a gradient only when it has a clear design purpose.
+
+---
+
+6. TYPOGRAPHY
+
+Use a modern professional sans-serif typeface.
+
+Typography must have:
+
+- Clear hierarchy
+- Strong readability
+- Controlled line lengths
+- Appropriate weights
+- Good line height
+- Intentional letter spacing
+- Consistent scale
+
+Do NOT make every heading enormous.
+
+Do not create the stereotypical AI hero:
+
+«“THE FUTURE OF NEXT-GENERATION GAMING”»
+
+with giant text occupying half the screen.
+
+Typography should communicate information, not compensate for weak design.
+
+---
+
+7. LAYOUT
+
+Use a consistent underlying grid.
+
+However, do NOT make every section identical.
+
+Use deliberate variation:
+
+- Full-width sections
+- Split layouts
+- Asymmetric layouts
+- Dense technical sections
+- Editorial layouts
+- Image-focused sections
+- Product panels
+- Data sections
+- Interactive sections
+
+The website should have a visual rhythm.
+
+Avoid:
+
+Hero → 3 cards → 3 cards → 3 cards → CTA
+
+repeated endlessly.
+
+---
+
+8. HERO SECTION
+
+The hero must communicate the actual value of Jack Network.
+
+Do NOT automatically use generic phrases such as:
+
+“Powering the future.”
+
+“Revolutionizing gaming.”
+
+“Next-generation infrastructure.”
+
+Write specific, human-sounding copy based on the actual business information.
+
+The hero may contain:
+
+- Strong headline
+- Supporting description
+- Primary CTA
+- Secondary CTA
+- Relevant visual
+- Product/interface visualization
+- Infrastructure visualization
+
+Do not add a random 3D sphere, glowing orb, or particle field simply because it looks “modern.”
+
+---
+
+9. NAVIGATION
+
+Navigation must be:
+
+- Minimal
+- Clear
+- Responsive
+- Professional
+- Fast
+- Easy to understand
+
+Use silver as the default navigation color.
+
+Use red for:
+
+- Hover
+- Active state
+- Important CTA
+- Selected state
+
+Do not make every navigation item red.
+
+Mobile navigation must be intentionally designed.
+
+---
+
+10. BUTTONS
+
+Buttons must NOT be plain static rectangles.
+
+Create polished, custom interactions.
+
+Primary button
+
+Use:
+
+- Jack Network red
+- Strong typography
+- Clean shape
+- Subtle depth
+- Smooth interaction
+
+Secondary button
+
+Use:
+
+- Dark surface
+- Silver border
+- Silver text
+- Red interaction state
+
+Buttons may use tasteful effects such as:
+
+- Highlight sweeps
+- Border transitions
+- Background movement
+- Icon movement
+- Arrow movement
+- Subtle elevation
+- Small scale feedback
+- Controlled red glow
+
+Do NOT make buttons constantly animate when idle.
+
+Do NOT use the same animation on every button.
+
+Different actions can have different interaction behavior.
+
+---
+
+11. INTERACTION STATES
+
+Every interactive component should consider:
+
+Default
+
+Hover
+
+Active
+
+Focus
+
+Disabled
+
+Loading
+
+Success
+
+Error
+
+where applicable.
+
+Interactive elements should feel responsive.
+
+Do not build fake interactive elements.
+
+If something looks clickable, it should work.
+
+---
+
+12. PREMIUM MICRO-INTERACTIONS
+
+Use polished micro-interactions for:
+
+- Navigation
+- Buttons
+- Links
+- Cards
+- Icons
+- Forms
+- Tabs
+- Dropdowns
+- Modals
+
+Examples:
+
+Links
+
+Silver → Red
+
+Optional animated underline.
+
+Arrow links
+
+Arrow subtly moves toward the destination.
+
+Cards
+
+Subtle border transition.
+
+Small elevation of approximately 1–3px.
+
+Optional red accent.
+
+Icons
+
+Small movement only when meaningful.
+
+Inputs
+
+Smooth focus border.
+
+Clear validation.
+
+Navigation
+
+Subtle active indicator.
+
+Do not over-animate.
+
+---
+
+13. MOTION LANGUAGE
+
+Create one consistent motion system.
+
+Animations should have consistent:
+
+- Duration
+- Easing
+- Movement distance
+- Opacity behavior
+- Scale behavior
+
+Avoid:
+
+- Bouncing
+- Constant floating
+- Huge zooms
+- Excessive parallax
+- Random particles
+- Animation on every element
+
+Animation should feel:
+
+Fast. Smooth. Controlled. Expensive.
+
+Not:
+
+Look how many animations I can add.
+
+Respect:
+
+"prefers-reduced-motion"
+
+---
+
+14. HERO / TECHNICAL ANIMATION
+
+Where appropriate, create subtle animated visuals related to Jack Network.
+
+Potential concepts:
+
+- Server network
+- Data flow
+- Infrastructure nodes
+- Network topology
+- Server status
+- Dynamic connections
+- Product interface
+- Minecraft network visualization
+
+Do NOT automatically use:
+
+- Floating spheres
+- Random blobs
+- AI waves
+- Neon particles
+- Generic glowing orbs
+
+Animation must relate to the actual product.
+
+---
+
+15. CARDS
+
+Cards should exist only when they improve information organization.
+
+Do NOT put every piece of content inside a card.
+
+Avoid endless:
+
+Icon → Heading → Paragraph
+
+cards.
+
+Use cards when they provide:
+
+- Grouping
+- Hierarchy
+- Interaction
+- Comparison
+- Information separation
+
+Otherwise use open layouts.
+
+---
+
+16. BORDER SYSTEM
+
+Use subtle silver/gray borders.
+
+Prefer:
+
+"1px"
+
+low-contrast borders.
+
+Use brighter borders or red borders during interaction.
+
+Do not outline everything heavily.
+
+---
+
+17. BORDER RADIUS
+
+Do not make everything excessively rounded.
+
+Avoid automatically using:
+
+"rounded-full"
+
+"rounded-2xl"
+
+"rounded-3xl"
+
+for everything.
+
+Use geometry intentionally.
+
+Some Jack Network components may be:
+
+- Sharp
+- Slightly rounded
+- Moderately rounded
+
+depending on their purpose.
+
+---
+
+18. GLASSMORPHISM
+
+Do NOT use glassmorphism as the default design language.
+
+Avoid:
+
+- backdrop blur everywhere
+- transparent cards everywhere
+- glowing glass borders
+- floating translucent panels
+
+Dark surfaces with subtle silver borders are often preferable.
+
+---
+
+19. GLOW
+
+Red does NOT mean neon.
+
+Do not add red glow to every:
+
+- Button
+- Card
+- Heading
+- Border
+- Icon
+- Background
+
+Use glow only where it genuinely improves the design.
+
+---
+
+20. IMAGES
+
+Images must have a purpose.
+
+Prefer:
+
+- Jack Network assets
+- Server infrastructure
+- Product screenshots
+- Minecraft network visuals
+- Technical diagrams
+- Custom illustrations
+- Product interfaces
+- Relevant photography
+
+Do not use random stock photography to fill empty space.
+
+If a suitable image doesn't exist, design the section without one.
+
+---
+
+21. IMAGE-TO-CODE WORKFLOW
+
+When a screenshot or visual reference is provided:
+
+Do NOT immediately start coding.
+
+First analyze:
+
+Structure
+
+- Container width
+- Grid
+- Columns
+- Alignment
+- Section height
+
+Typography
+
+- Font style
+- Scale
+- Weight
+- Line height
+- Letter spacing
+
+Color
+
+- Background
+- Surface
+- Text
+- Border
+- Accent
+
+Components
+
+- Navigation
+- Buttons
+- Cards
+- Images
+- Forms
+- Tables
+
+Motion
+
+- Hover
+- Transitions
+- Entrance animations
+
+Then recreate the underlying design principles within the Jack Network design system.
+
+Do not blindly copy the reference.
+
+---
+
+22. STRICT ANTI-AI-DESIGN RULES
+
+The website must NOT look like a typical AI-generated website.
+
+Avoid these patterns:
+
+- Giant gradient heading
+- Purple/blue AI gradients
+- Random glowing blobs
+- Floating glass cards
+- Excessive rounded corners
+- Excessive shadows
+- Fake statistics
+- Fake testimonials
+- Repetitive three-card sections
+- Generic SaaS layouts
+- Generic gaming-hosting layouts
+- Huge meaningless whitespace
+- Random decorative shapes
+- Random 3D objects
+- Emoji-based UI
+- Excessive badges
+- Excessive pill components
+- Excessive red glow
+- Excessive animation
+- Generic marketing copy
+
+Do not follow the common AI website formula:
+
+Hero → Features → Stats → Testimonials → Pricing → FAQ → CTA
+
+unless the actual content genuinely requires those sections.
+
+---
+
+23. ANTI-TEMPLATE RULE
+
+Do not make Jack Network look like:
+
+- A Vercel clone
+- A Linear clone
+- A Framer template
+- A generic SaaS template
+- A generic hosting template
+- A generic gaming website
+- An AI startup landing page
+
+References may inspire principles.
+
+The final composition must be original.
+
+---
+
+24. ANTI-AI SOURCE CODE RULES
+
+The source code should also be clean and intentional.
+
+Do NOT generate unnecessary comments such as:
+
+# Hero Section
+# Main Content
+# Button Styles
+# Footer
+# Navigation
+
+or obvious comments such as:
+
+// Create button
+// Render component
+// Main heading
+
+Only add comments when they explain genuinely non-obvious technical reasoning.
+
+Do not write comments simply to make the code appear organized.
+
+---
+
+25. NO UNNECESSARY ABSTRACTION
+
+Do not create a component for every tiny element.
+
+Do not create dozens of files for a simple page.
+
+Create reusable components when:
+
+- They are actually reused
+- They contain meaningful behavior
+- They represent a real design-system primitive
+- Reuse improves maintainability
+
+Do not abstract code merely for the sake of abstraction.
+
+---
+
+26. NO GIANT COMPONENTS
+
+Do not put the entire website into one enormous component.
+
+Separate logical functionality appropriately.
+
+Use practical project structure.
+
+Do not create 50 tiny components simply to appear professional.
+
+---
+
+27. NO DEPENDENCY BLOAT
+
+Before adding a package, determine whether it is genuinely needed.
+
+Do not install multiple libraries that solve the same problem.
+
+Avoid unnecessary:
+
+- Animation libraries
+- UI frameworks
+- Icon libraries
+- Utility packages
+- State libraries
+
+Use existing dependencies and browser capabilities when sufficient.
+
+---
+
+28. NO FAKE CONTENT
+
+Never invent:
+
+- Customers
+- Testimonials
+- Reviews
+- Player counts
+- Server counts
+- Uptime
+- Latency
+- Revenue
+- Awards
+- Certifications
+- Partnerships
+- Team members
+- Locations
+- Statistics
+
+Do not use:
+
+Lorem ipsum
+
+John Doe
+
+Company Name
+
+123K+ Users
+
+99.99% uptime
+
+unless explicitly provided or requested.
+
+---
+
+29. NO FAKE FUNCTIONALITY
+
+Do not create UI that looks functional but isn't.
+
+Examples:
+
+- Fake search
+- Fake login
+- Fake dashboard
+- Fake status
+- Fake server statistics
+- Fake toggles
+- Fake forms
+- Fake notifications
+- Fake charts
+
+If functionality cannot be implemented yet, clearly distinguish it from production functionality.
+
+---
+
+30. CONTENT QUALITY
+
+Copy should sound human.
+
+Be:
+
+- Specific
+- Clear
+- Confident
+- Concise
+- Natural
+
+Avoid repetitive AI marketing language such as:
+
+- Unlock
+- Revolutionize
+- Transform
+- Next-generation
+- Cutting-edge
+- Seamless
+- Empower
+- Built for the future
+- Take your experience to the next level
+
+Use specific language instead.
+
+---
+
+31. JACK NETWORK ECOSYSTEM
+
+Design Jack Network as a brand ecosystem.
+
+Future products/services may have their own pages and experiences.
+
+All Jack Network properties should share:
+
+- Core typography principles
+- Black foundation
+- Silver neutral system
+- Red interaction language
+- Spacing philosophy
+- Button principles
+- Navigation principles
+- Accessibility standards
+- Motion language
+
+Individual products may have:
+
+- Different layouts
+- Different imagery
+- Different content
+- Product-specific visual details
+
+But they must still feel like they belong to Jack Network.
+
+---
+
+32. RESPONSIVE DESIGN
+
+Design intentionally for:
+
+- Mobile
+- Tablet
+- Laptop
+- Desktop
+- Large displays
+
+Do not simply shrink the desktop layout.
+
+Pay particular attention to:
+
+- Navigation
+- Hero
+- Typography
+- Buttons
+- Tables
+- Cards
+- Images
+- Forms
+- Spacing
+- Touch targets
+
+No horizontal overflow.
+
+No broken layouts.
+
+No text escaping containers.
+
+---
+
+33. ACCESSIBILITY
+
+Implement:
+
+- Semantic HTML
+- Proper heading hierarchy
+- Keyboard navigation
+- Visible focus states
+- Accessible buttons
+- Accessible forms
+- Sufficient contrast
+- Meaningful alt text
+- Reduced-motion support
+
+Do not sacrifice accessibility for aesthetics.
+
+---
+
+34. SEO
+
+Implement appropriate SEO:
+
+- Page titles
+- Meta descriptions
+- Canonical URLs
+- Open Graph metadata
+- Social preview metadata
+- Proper heading hierarchy
+- Semantic HTML
+- Sitemap
+- Robots.txt
+- Structured data where appropriate
+
+Do not keyword-stuff content.
+
+---
+
+35. PERFORMANCE
+
+Build for production.
+
+Optimize:
+
+- Images
+- Fonts
+- JavaScript
+- CSS
+- Rendering
+- Network requests
+
+Use lazy loading where appropriate.
+
+Prevent layout shifts.
+
+Avoid unnecessary client-side rendering.
+
+Do not sacrifice performance for visual effects.
+
+---
+
+36. SECURITY
+
+Never expose:
+
+- API keys
+- Passwords
+- Tokens
+- Database credentials
+- Private environment variables
+
+Keep secrets server-side.
+
+Validate input.
+
+Sanitize user-generated content.
+
+Do not trust client-side authorization.
+
+Protect API routes.
+
+Do not expose unnecessary internal infrastructure information.
+
+---
+
+37. REAL APPLICATION STATES
+
+For dynamic functionality, implement appropriate:
+
+Loading
+
+Success
+
+Empty
+
+Error
+
+Retry
+
+states.
+
+Do not design only the perfect successful scenario.
+
+---
+
+38. FORMS
+
+Forms must have:
+
+- Proper labels
+- Validation
+- Useful error messages
+- Loading states
+- Success states
+- Accessible focus states
+
+Do not rely only on placeholder text as labels.
+
+---
+
+39. DESIGN TOKENS
+
+Centralize the Jack Network design system.
+
+Do not scatter random colors throughout the project.
+
+Create centralized tokens for:
+
+- Background
+- Surface
+- Elevated surface
+- Primary text
+- Secondary text
+- Muted text
+- Border
+- Accent
+- Accent hover
+- Focus
+- Error
+- Success
+- Spacing
+- Radius
+- Typography
+- Motion
+
+The website should be easy to update globally.
+
+---
+
+40. DESIGN CONSISTENCY
+
+Maintain consistency across:
+
+- Buttons
+- Links
+- Cards
+- Forms
+- Navigation
+- Typography
+- Borders
+- Icons
+- Animations
+- Spacing
+
+Do not invent a completely different design language for each section.
+
+---
+
+41. VISUAL VARIETY
+
+Consistency does NOT mean repetition.
+
+Do not make every section look identical.
+
+Intentionally vary:
+
+- Composition
+- Content density
+- Alignment
+- Image placement
+- Section height
+- Grid structure
+
+The result should feel designed rather than assembled.
+
+---
+
+42. PERFORMANCE VS. ANIMATION
+
+When deciding between a flashy effect and performance:
+
+Choose performance.
+
+When deciding between more animation and better interaction:
+
+Choose better interaction.
+
+When deciding between more decoration and stronger composition:
+
+Choose stronger composition.
+
+---
+
+43. VISUAL QA LOOP
+
+This is mandatory.
+
+Do not consider the website finished immediately after the code compiles.
+
+Follow:
+
+BUILD → RUN → INSPECT → IDENTIFY → FIX → INSPECT AGAIN
+
+Render and inspect the website visually.
+
+Check:
+
+Desktop
+
+- 1440px
+- 1920px
+
+Tablet
+
+- Approximately 768px–1024px
+
+Mobile
+
+- Approximately 320px–430px
+
+Look for:
+
+- Alignment
+- Spacing
+- Typography
+- Overflow
+- Broken layouts
+- Weak hierarchy
+- Excessive red
+- Weak contrast
+- Repetitive sections
+- Broken animations
+- Poor mobile navigation
+- Visual inconsistencies
+
+Fix issues before completion.
+
+---
+
+44. ANTI-SLOP FINAL REVIEW
+
+Before finishing, ask yourself:
+
+«Would a professional designer immediately recognize this as an AI-generated website?»
+
+If YES:
+
+Redesign it.
+
+Look specifically for:
+
+- Generic hero
+- Generic gradients
+- Repetitive cards
+- Excessive rounded corners
+- Glassmorphism
+- Fake statistics
+- Generic copy
+- Random decoration
+- Excessive animation
+- Template-like layouts
+- Unnecessary components
+- Unnecessary dependencies
+- Excessive code comments
+
+Remove or redesign anything that contributes to AI/template appearance.
+
+---
+
+45. SOURCE CODE FINAL REVIEW
+
+Before finishing:
+
+Check for:
+
+- Unused imports
+- Dead code
+- Unused components
+- Unused dependencies
+- Debug logs
+- Temporary files
+- Fake data
+- Placeholder content
+- Unnecessary comments
+- Duplicated code
+- Broken routes
+- Broken imports
+- Hardcoded secrets
+- Accessibility issues
+
+Clean everything up.
+
+---
+
+46. FUNCTIONAL TEST
+
+Verify:
+
+- Every navigation link
+- Every CTA
+- Every button
+- Every form
+- Every interactive component
+- Mobile menu
+- External links
+- Internal routes
+- Loading states
+- Error states
+
+Nothing important should be decorative-only.
+
+---
+
+47. FINAL QUALITY STANDARD
+
+Do not optimize for:
+
+“Generate the website as quickly as possible.”
+
+Optimize for:
+
+Create the best possible Jack Network website.
+
+The final website should feel like:
+
+A real company invested heavily in its digital presence.
+
+Not:
+
+An AI generated a landing page from a prompt.
+48. FINAL DESIGN PHILOSOPHY
+Remember these principles throughout the entire project:
+Black is the foundation.
+Silver creates sophistication.
+Red communicates action.
+Animation creates feedback.
+Typography creates hierarchy.
+Spacing creates calm.
+Interaction creates polish.
+Content creates purpose.
+Restraint creates premium quality.
+The website should never rely on effects to compensate for weak design.
+FINAL COMMAND
+Build Jack Network as an original, premium, technically sophisticated, production-ready digital brand experience.
+Use the provided design resources intelligently.
+Do not blindly copy references.
+Do not use generic AI design patterns.
+Do not generate unnecessary code.
+Do not generate unnecessary comments.
+Do not fabricate information.
+Do not overuse gradients.
+Do not overuse red.
+Do not overuse rounded cards.
+Do not overuse glassmorphism.
+Do not overuse glow.
+Do not overuse animation.
+Instead:
+Design with intention.
+Code with discipline.
+Animate with restraint.
+Test visually.
+Iterate until polished.
+The final result should make someone think:
+“Jack Network actually looks like a serious brand.”
+—not—
+“An AI made this website.”
