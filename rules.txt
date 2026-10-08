@@ -1402,3 +1402,39 @@ BUILD → RUN → TEST MOBILE → INSPECT → IDENTIFY ISSUES → FIX → TEST A
 Do not declare the website complete if the desktop version looks good but the mobile version has layout, usability, performance, or interaction problems.
 
 Mobile quality must be equal to desktop quality.
+
+---
+
+50. NON-NEGOTIABLE QUALITY STANDARDS
+
+1. No fake functionality
+Never create buttons, forms, dashboards, counters, login systems, server status displays, APIs, or integrations that only look functional. If functionality isn't implemented, either ask me or clearly mark it as unavailable.
+
+2. Real content only
+Never invent pricing, player counts, uptime, customers, testimonials, partnerships, statistics, server specifications, or business claims. Ask me when real information is required.
+
+3. Accessibility
+Follow WCAG principles. Ensure keyboard navigation, visible focus states, sufficient contrast, semantic HTML, accessible labels, and reduced-motion support.
+
+4. Performance
+Keep the site fast. Avoid unnecessary libraries, huge images, excessive JavaScript, unnecessary animations, and oversized dependencies. Optimize images, fonts, code splitting, and loading behavior.
+
+5. Security
+Never expose secrets or credentials in client-side code. Use environment variables and server-side validation/authentication. Never trust client-side permissions. Validate user input and protect API/database operations.
+
+6. Error/loading/empty states
+Every real dynamic feature must have proper loading, empty, error, retry, and success states where applicable. Never leave users staring at a blank screen.
+
+7. Visual consistency
+Establish centralized design tokens for colors, spacing, typography, borders, radii, shadows, animation timing, and breakpoints. Do not randomly invent new values throughout the project.
+
+8. Don't over-animate
+Animation should communicate interaction or provide useful feedback. Do not animate everything. Respect prefers-reduced-motion.
+
+9. Cross-browser
+Test important functionality on modern Chrome, Firefox, Safari, and Edge, especially responsive layouts and interactive components.
+
+10. Final visual QA
+Do not stop after the first successful build.
+
+BUILD → RUN → INSPECT → SCREENSHOT → FIND PROBLEMS → FIX → REPEAT
