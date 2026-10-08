@@ -1362,3 +1362,43 @@ The final result should make someone think:
 “Jack Network actually looks like a serious brand.”
 —not—
 “An AI made this website.”
+
+---
+
+49. MOBILE & RESPONSIVE DESIGN — MANDATORY
+
+The mobile experience is a first-class version of the website, not a scaled-down desktop version.
+
+- Design mobile-first, then progressively enhance for tablet and desktop.
+- The website must work flawlessly on small phones, standard phones, tablets, laptops, and large desktop displays.
+- Test at minimum: 320px, 360px, 375px, 390px, 414px, 768px, 1024px, 1280px, and 1440px+ widths.
+- Support portrait and landscape layouts where relevant.
+- No horizontal scrolling, clipped content, overlapping elements, broken layouts, or elements extending outside the viewport.
+- Never simply shrink the desktop layout. Recompose sections specifically for mobile.
+- Navigation must have a proper mobile navigation/menu experience.
+- All buttons and interactive elements must have comfortable touch targets.
+- Never rely exclusively on hover; every important interaction must work properly on touch devices.
+- Typography must resize naturally without awkward wrapping or oversized headings.
+- Grids, cards, tables, forms, images, videos, and other content must intelligently reflow on smaller screens.
+- Hero sections must be intentionally designed for mobile rather than compressed from desktop.
+- Modals, dropdowns, menus, tooltips, notifications, and overlays must remain completely usable within the viewport.
+- Forms must be comfortable to use with mobile keyboards.
+- Respect mobile safe-area insets where necessary.
+- Optimize images, animations, fonts, and assets for mobile performance and bandwidth.
+- Avoid excessive animations on lower-powered/mobile devices.
+- Maintain the Jack Network visual identity on mobile: black foundation, silver information, red actions.
+- Do not remove important functionality simply because the screen is smaller. Adapt the UX instead.
+- Ensure sufficient contrast, readable text, visible focus states, and accessible touch interactions.
+- Test actual interaction states on mobile, not just the static layout.
+- Check scrolling behavior, sticky elements, menus, buttons, forms, animations, and viewport resizing.
+- Test both very small screens and large screens to prevent breakpoint-specific bugs.
+
+MOBILE QA IS REQUIRED
+
+Before considering the website finished:
+
+BUILD → RUN → TEST MOBILE → INSPECT → IDENTIFY ISSUES → FIX → TEST AGAIN
+
+Do not declare the website complete if the desktop version looks good but the mobile version has layout, usability, performance, or interaction problems.
+
+Mobile quality must be equal to desktop quality.
