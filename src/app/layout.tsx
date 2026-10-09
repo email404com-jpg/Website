@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, JetBrains_Mono } from "next/font/google";
 import { site } from "@/lib/site";
+import { Providers } from "@/components/session-provider";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -58,7 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${archivo.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
