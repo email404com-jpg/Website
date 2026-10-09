@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { site } from "@/lib/site";
 import { AuthNav } from "@/components/auth-nav";
+import { ActionLink } from "@/components/action-link";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);

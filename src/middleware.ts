@@ -1,15 +1,17 @@
-import { auth } from '@/auth';
-import { NextResponse } from 'next/server';
+import NextAuth from 'next-auth';
+import { authConfig } from './auth.config';
 
-export const middleware = auth((req) => {
+const { auth } = NextAuth(authConfig);
+
+export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
 
   if (pathname.startsWith('/login') && isLoggedIn) {
-    return NextResponse.redirect(new URL('/', req.url));
+    const url = new URL('/', req.url);
+    return Response.redirect(url);
   }
-
-  return NextResponse.next();
+  return;
 });
 
 export const config = {
