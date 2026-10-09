@@ -33,5 +33,9 @@ export const site = {
     { href: "#modes", label: "Modes" },
     { href: "#status", label: "Status" },
     { href: "#join", label: "Join" },
+    { href: "/rules", label: "Rules" },
+    { href: "/status", label: "Live Status" },
+    { href: "/terms", label: "Terms" },
+    { href: "/login", label: "Login" },
   ],
 } as const;

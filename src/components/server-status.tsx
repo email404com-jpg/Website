@@ -21,22 +21,28 @@ export function ServerStatus() {
     const controller = new AbortController();
     let cancelled = false;
 
-    fetch("/api/server", { cache: "no-store", signal: controller.signal })
-      .then((res) => res.json())
-      .then((data: Payload) => {
-        if (cancelled) return;
-        setPayload(data);
-        setPhase("ready");
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setPayload({ state: "error" });
-        setPhase("ready");
-      });
+    const fetchStatus = () => {
+      fetch("/api/server", { cache: "no-store", signal: controller.signal })
+        .then((res) => res.json())
+        .then((data: Payload) => {
+          if (cancelled) return;
+          setPayload(data);
+          setPhase("ready");
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setPayload({ state: "error" });
+          setPhase("ready");
+        });
+    };
+
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 10000);
 
     return () => {
       cancelled = true;
       controller.abort();
+      clearInterval(interval);
     };
   }, [attempt]);
 
