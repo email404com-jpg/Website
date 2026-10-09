@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { SignInButton } from '@/components/auth-buttons';
+import { ActionLink } from '@/components/action-link';
 
 export const metadata: Metadata = {
   title: 'Login',
@@ -20,8 +20,14 @@ export default function LoginPage() {
               Sign in with your Discord account.
             </p>
             <div className="mt-6">
-              <SignInButton />
+              <ActionLink href="#" className="w-full sm:w-auto">
+                Login with Discord
+              </ActionLink>
             </div>
+            <p className="mt-4 text-sm text-fg-subtle">
+              Note: Auth not wired yet. Provide Discord OAuth credentials to
+              enable real login (and cross-subdomain SSO later).
+            </p>
           </div>
         </div>
       </div>

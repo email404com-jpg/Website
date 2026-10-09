@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { site } from "@/lib/site";
-import { AuthNav } from "@/components/auth-nav";
 import { ActionLink } from "@/components/action-link";
 
 export function SiteHeader() {
@@ -84,14 +83,12 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <AuthNav />
           <ActionLink
-            href={site.discord.url}
+            href="/login"
             variant="secondary"
-            external
             className="hidden px-4 sm:inline-flex"
           >
-            {site.discord.label}
+            Login
           </ActionLink>
 
           <button
@@ -149,10 +146,17 @@ export function SiteHeader() {
           </ul>
 
           <ActionLink
+            href="/login"
+            variant="secondary"
+            className="mt-4 w-full"
+          >
+            Login with Discord
+          </ActionLink>
+          <ActionLink
             href={site.discord.url}
             variant="primary"
             external
-            className="mt-4 w-full"
+            className="mt-2 w-full"
           >
             Join {site.discord.label}
           </ActionLink>
