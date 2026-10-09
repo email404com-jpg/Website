@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { site } from "@/lib/site";
-import { AuthNav } from "@/components/auth-nav";
 import { ActionLink } from "@/components/action-link";
 
 export function SiteHeader() {
@@ -84,7 +83,6 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <AuthNav />
           <ActionLink
             href={site.discord.url}
             variant="secondary"
@@ -92,6 +90,9 @@ export function SiteHeader() {
             className="hidden px-4 sm:inline-flex"
           >
             {site.discord.label}
+          </ActionLink>
+          <ActionLink href="/login" variant="secondary" className="px-4 sm:px-5">
+            Login
           </ActionLink>
 
           <button

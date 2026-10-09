@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { SignInButton } from '@/components/auth-buttons';
 
 export const metadata: Metadata = {
   title: 'Login',
@@ -17,11 +16,9 @@ export default function LoginPage() {
               Login
             </h1>
             <p className="mt-3 text-base leading-relaxed text-fg-muted">
-              Sign in with your Discord account.
+              Login with Discord is coming soon. Credentials will be wired
+              when provided.
             </p>
-            <div className="mt-6">
-              <SignInButton />
-            </div>
           </div>
         </div>
       </div>
