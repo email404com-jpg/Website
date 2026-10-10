@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { site } from "@/lib/site";
 import { ActionLink } from "@/components/action-link";
+import { AuthNav } from "@/components/auth-nav";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -67,7 +68,7 @@ export function SiteHeader() {
           </span>
         </a>
 
-        <nav aria-label="Primary" className="hidden md:block">
+        <nav aria-label="Primary" className="hidden lg:block">
           <ul className="flex items-center gap-1">
             {site.nav.map((item) => (
               <li key={item.href}>
@@ -83,17 +84,17 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <ActionLink
-            href={site.discord.url}
-            variant="secondary"
-            external
-            className="hidden px-4 sm:inline-flex"
-          >
-            {site.discord.label}
-          </ActionLink>
-          <ActionLink href="/login" variant="secondary" className="px-4 sm:px-5">
-            Login
-          </ActionLink>
+          <span className="hidden lg:block">
+            <ActionLink
+              href={site.discord.url}
+              variant="secondary"
+              external
+              className="px-4"
+            >
+              {site.discord.label}
+            </ActionLink>
+          </span>
+          <AuthNav />
 
           <button
             ref={buttonRef}
@@ -102,7 +103,7 @@ export function SiteHeader() {
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label={open ? "Close menu" : "Open menu"}
-            className="inline-flex h-11 w-11 items-center justify-center rounded border border-line-strong text-fg-muted transition-colors duration-[var(--duration)] hover:border-accent hover:text-fg md:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded border border-line-strong text-fg-muted transition-colors duration-[var(--duration)] hover:border-accent hover:text-fg lg:hidden"
           >
             <span className="relative block h-3 w-4" aria-hidden="true">
               <span
@@ -129,7 +130,7 @@ export function SiteHeader() {
         id="mobile-menu"
         ref={panelRef}
         hidden={!open}
-        className="border-t border-line bg-surface md:hidden"
+        className="border-t border-line bg-surface lg:hidden"
       >
         <nav aria-label="Mobile" className="px-4 py-3 sm:px-6">
           <ul className="divide-y divide-line">
@@ -149,13 +150,9 @@ export function SiteHeader() {
             ))}
           </ul>
 
-          <ActionLink
-            href="/login"
-            variant="secondary"
-            className="mt-4 w-full"
-          >
-            Login with Discord
-          </ActionLink>
+          <div className="mt-4">
+            <AuthNav />
+          </div>
           <ActionLink
             href={site.discord.url}
             variant="primary"

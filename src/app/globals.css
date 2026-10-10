@@ -127,6 +127,32 @@ textarea {
   }
 }
 
+@keyframes jn-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes jn-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes jn-dash-flow {
+  to {
+    stroke-dashoffset: -200;
+  }
+}
+
 .jn-flow {
   animation: jn-flow 3.4s linear infinite;
 }
@@ -137,6 +163,52 @@ textarea {
 
 .jn-blink {
   animation: jn-blink 2.4s ease-in-out infinite;
+}
+
+.jn-reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 600ms var(--ease),
+    transform 600ms var(--ease);
+}
+
+.jn-reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+.jn-tilt {
+  transition: transform 300ms var(--ease);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.jn-tilt-none {
+  transition: none;
+}
+
+.jn-acc {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 280ms var(--ease);
+}
+
+.jn-acc[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+.jn-acc-inner {
+  overflow: hidden;
+}
+
+.jn-acc[data-open="false"] .jn-acc-inner {
+  visibility: hidden;
+}
+
+.jn-dash {
+  stroke-dasharray: 8 192;
+  animation: jn-dash-flow 4s linear infinite;
 }
 
 

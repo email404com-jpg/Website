@@ -26,7 +26,7 @@ export function SiteFooter() {
             </p>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-3">
             <div>
               <p className="text-xs uppercase tracking-[0.14em] text-fg-subtle">
                 Server
@@ -37,6 +37,30 @@ export function SiteFooter() {
               <p className="mt-1 text-xs text-fg-subtle">
                 {site.server.editions.join(" · ")}
               </p>
+            </div>
+
+            <div>
+              <p className="text-xs uppercase tracking-[0.14em] text-fg-subtle">
+                Pages
+              </p>
+              <ul className="mt-2 space-y-1">
+                {[
+                  { href: "/coins", label: "Coins" },
+                  { href: "/status", label: "Status" },
+                  { href: "/faq", label: "FAQ" },
+                  { href: "/rules", label: "Rules" },
+                  { href: "/terms", label: "Terms" },
+                ].map((link) => (
+                  <li key={link.href}>
+                    <a
+                      href={link.href}
+                      className="inline-flex min-h-8 items-center text-sm text-fg-muted transition-colors duration-[var(--duration)] hover:text-accent"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <div>
