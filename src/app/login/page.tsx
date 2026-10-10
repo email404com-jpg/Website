@@ -6,6 +6,8 @@ export const metadata: Metadata = {
 };
 
 
+import { SignInButton } from '@/components/auth-buttons';
+
 export default function LoginPage() {
   return (
     <main className="flex-1">
@@ -20,6 +22,7 @@ export default function LoginPage() {
               Sign in with your Discord account.
             </p>
             <div className="mt-6">
+              <SignInButton />
             </div>
           </div>
         </div>
