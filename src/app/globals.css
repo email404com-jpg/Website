@@ -1,0 +1,831 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────
+   Jack Network design tokens
+   Black · silver · crimson. Dark is the brand default; the
+   cinematic bands (.jn-dark) stay dark even if a visitor opts
+   into the light theme.
+   ─────────────────────────────────────────────────────────── */
+:root {
+  --background: #08090b;
+  --surface: #101216;
+  --surface-raised: #171a20;
+  --surface-hover: #1f232c;
+
+  --fg: #f4f5f7;
+  --fg-muted: #a4a9b2;
+  --fg-subtle: #7e8590;
+  --fg-disabled: #4a5260;
+
+  --line: #292d35;
+  --line-strong: #3a404b;
+  --line-hover: #525a68;
+
+  --accent: #d7193f;
+  --accent-hover: #e83055;
+  --accent-active: #a80f31;
+  /* Small-text-safe crimson: AA (4.5:1) on the dark background */
+  --accent-ink: #f04a63;
+
+  --focus: #f04a63;
+  --success: #2ea043;
+  --error: #e83055;
+
+  --scrim-strong: rgba(8, 9, 11, 0.96);
+  --scrim-mid: rgba(8, 9, 11, 0.84);
+  --scrim-soft: rgba(8, 9, 11, 0.5);
+  --scrim-edge: rgba(8, 9, 11, 0.72);
+  --scrim-floor: rgba(8, 9, 11, 0.6);
+  --scrim-glow: rgba(215, 25, 63, 0.22);
+  --scrim-vignette: rgba(0, 0, 0, 0.55);
+  --hero-ink: #ffffff;
+  --hero-panel: rgba(0, 0, 0, 0.45);
+  --hero-panel-border: rgba(255, 255, 255, 0.14);
+  --panel-fade: rgba(8, 9, 11, 0.85);
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow: 0 18px 44px -20px rgb(0 0 0 / 0.75);
+  --shadow-crimson: 0 12px 34px -12px rgb(215 25 63 / 0.55);
+
+  --duration-fast: 120ms;
+  --duration: 200ms;
+  --duration-slow: 320ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+/* Light theme — opt-in only */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --background: #eff0f3;
+  --surface: #ffffff;
+  --surface-raised: #e8eaee;
+  --surface-hover: #dfe2e8;
+
+  --fg: #0b0d10;
+  --fg-muted: #3d434d;
+  --fg-subtle: #5b6270;
+  --fg-disabled: #b4b9c2;
+
+  --line: #dfe2e8;
+  --line-strong: #c6cbd4;
+  --line-hover: #9aa2af;
+
+  --accent: #b31238;
+  --accent-hover: #d7193f;
+  --accent-active: #8c0e2c;
+  --accent-ink: #a50f30;
+
+  --focus: #a50f30;
+  --success: #1a7f37;
+  --error: #b31238;
+
+  --scrim-strong: rgba(245, 245, 246, 0.94);
+  --scrim-mid: rgba(245, 245, 246, 0.82);
+  --scrim-soft: rgba(245, 245, 246, 0.42);
+  --scrim-edge: rgba(245, 245, 246, 0.66);
+  --scrim-floor: rgba(245, 245, 246, 0.65);
+  --scrim-glow: rgba(225, 6, 0, 0.12);
+  --scrim-vignette: rgba(11, 11, 13, 0.28);
+  --hero-ink: #0b0b0d;
+  --hero-panel: rgba(255, 255, 255, 0.78);
+  --hero-panel-border: rgba(11, 11, 13, 0.12);
+  --panel-fade: rgba(245, 245, 246, 0.85);
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.08);
+  --shadow: 0 10px 30px -16px rgb(0 0 0 / 0.22);
+}
+
+/* Cinematic bands: always the dark palette */
+.jn-dark,
+:root[data-theme="light"] .jn-dark {
+  color-scheme: dark;
+  --background: #08090b;
+  --surface: #101216;
+  --surface-raised: #171a20;
+  --surface-hover: #1f232c;
+  --fg: #f4f5f7;
+  --fg-muted: #a4a9b2;
+  --fg-subtle: #7e8590;
+  --fg-disabled: #4a5260;
+  --line: #292d35;
+  --line-strong: #3a404b;
+  --line-hover: #525a68;
+  --accent: #d7193f;
+  --accent-hover: #e83055;
+  --accent-ink: #f04a63;
+  --hero-ink: #ffffff;
+  --scrim-strong: rgba(8, 9, 11, 0.96);
+  --scrim-mid: rgba(8, 9, 11, 0.84);
+  --scrim-soft: rgba(8, 9, 11, 0.5);
+  --scrim-edge: rgba(8, 9, 11, 0.72);
+  --scrim-floor: rgba(8, 9, 11, 0.6);
+  --scrim-glow: rgba(215, 25, 63, 0.22);
+  --scrim-vignette: rgba(0, 0, 0, 0.55);
+  background-color: var(--background);
+  color: var(--fg);
+}
+
+@theme {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-hover: var(--surface-hover);
+
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-fg-disabled: var(--fg-disabled);
+  --color-hero-ink: var(--hero-ink);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-line-hover: var(--line-hover);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-ink: var(--accent-ink);
+
+  --color-focus: var(--focus);
+  --color-success: var(--success);
+  --color-error: var(--error);
+
+  --font-sans: var(--font-body-face), "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-display-face), "Arial Narrow", Impact, sans-serif;
+  --font-mono: var(--font-mono-face), ui-monospace, "SF Mono", monospace;
+
+  --radius-sm: 1px;
+  --radius: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+
+  --shadow-crimson: 0 12px 34px -12px rgb(215 25 63 / 0.55);
+
+  --breakpoint-xs: 30rem;
+}
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  background-color: var(--background);
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: 4.5rem;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+/* The condensed display face is set in caps throughout */
+@layer base {
+  .font-display {
+    text-transform: uppercase;
+  }
+}
+
+::selection {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Type utilities ── */
+.jn-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.jn-outline {
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(244 245 247 / 0.2);
+  user-select: none;
+}
+
+.jn-outline-accent {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--accent);
+}
+
+/* ── Generic keyframes ── */
+@keyframes jn-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes jn-enter {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes jn-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes jn-ember {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate3d(var(--drift, 12px), -140px, 0) scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes jn-drift {
+  from {
+    transform: scale(1.04) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.1) translate3d(-1.2%, -0.8%, 0);
+  }
+}
+
+.jn-blink {
+  animation: jn-blink 2.4s ease-in-out infinite;
+}
+
+.jn-drift {
+  animation: jn-drift 30s ease-in-out infinite alternate;
+}
+
+.jn-ember {
+  animation: jn-ember var(--dur, 6s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* Entrance: content is in the DOM and visible to crawlers immediately */
+.jn-enter {
+  opacity: 0;
+  animation: jn-enter 0.95s var(--ease) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+.jn-enter-fade {
+  opacity: 0;
+  animation: jn-fade 1.4s var(--ease) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+
+/* Scroll reveal */
+.jn-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 700ms var(--ease),
+    transform 700ms var(--ease);
+}
+
+.jn-reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Buttons ── */
+.jn-btn {
+  position: relative;
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  padding-inline: 1.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: var(--radius);
+  transition:
+    background-color var(--duration) var(--ease),
+    border-color var(--duration) var(--ease),
+    color var(--duration) var(--ease),
+    box-shadow var(--duration-slow) var(--ease),
+    transform var(--duration) var(--ease);
+}
+
+.jn-btn:active {
+  transform: scale(0.98);
+}
+
+.jn-btn-primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18);
+}
+
+.jn-btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    0 10px 30px -10px rgb(232 48 85 / 0.7);
+}
+
+.jn-btn-ghost {
+  border: 1px solid var(--line-strong);
+  color: var(--fg);
+  background: rgb(255 255 255 / 0.02);
+}
+
+.jn-btn-ghost:hover {
+  border-color: var(--fg-muted);
+  background: rgb(255 255 255 / 0.06);
+}
+
+.jn-btn .jn-arrow {
+  transition: transform var(--duration) var(--ease);
+}
+
+.jn-btn:hover .jn-arrow {
+  transform: translateX(3px);
+}
+
+/* Nav link underline */
+.jn-navlink {
+  position: relative;
+}
+
+.jn-navlink::after {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.35rem;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--duration-slow) var(--ease);
+}
+
+.jn-navlink:hover::after,
+.jn-navlink[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+/* ── Accordion ── */
+.jn-acc {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms var(--ease);
+}
+
+.jn-acc[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+.jn-acc-inner {
+  overflow: hidden;
+}
+
+.jn-acc[data-open="false"] .jn-acc-inner {
+  visibility: hidden;
+}
+
+/* ── Theme toggle icons ── */
+.jn-theme-icons > span:first-child {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+  transition:
+    opacity var(--duration) var(--ease),
+    transform var(--duration-slow) var(--ease);
+}
+
+.jn-theme-icons > span:last-child {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.6);
+  transition:
+    opacity var(--duration) var(--ease),
+    transform var(--duration-slow) var(--ease);
+}
+
+:root[data-theme="light"] .jn-theme-icons > span:first-child {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.6);
+}
+
+:root[data-theme="light"] .jn-theme-icons > span:last-child {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+/* ── Panel art tilt / hover ── */
+.jn-tilt {
+  transition: transform 300ms var(--ease);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.jn-tilt-none {
+  transition: none;
+}
+
+.jn-art-frame img {
+  transition:
+    transform 900ms var(--ease),
+    filter 700ms var(--ease);
+}
+
+.jn-art-frame:hover img {
+  transform: scale(1.04);
+}
+
+/* Monochrome-to-colour image treatment: stock art is pulled into the
+   palette (silver-black) and warms on hover. */
+.jn-mono {
+  filter: grayscale(1) contrast(1.08) brightness(1);
+}
+
+.jn-art-frame:hover .jn-mono {
+  filter: grayscale(0.2) contrast(1.05) brightness(1.05);
+}
+
+/* ═══════════════ Hero emblem (CSS 3D) ═══════════════ */
+.jn-stage {
+  perspective: 1500px;
+  perspective-origin: 50% 40%;
+}
+
+.jn-tilt-rig {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(var(--py, 0) * -7deg))
+    rotateY(calc(var(--px, 0) * 11deg));
+  will-change: transform;
+}
+
+.jn-float {
+  transform-style: preserve-3d;
+  animation: jn-float 9s ease-in-out infinite alternate;
+}
+
+@keyframes jn-float {
+  from {
+    transform: translate3d(0, -8px, 0);
+  }
+  to {
+    transform: translate3d(0, 10px, 0);
+  }
+}
+
+.jn-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* extruded depth stack: dark copies pushed back along Z */
+.jn-depth-1 {
+  transform: translateZ(-16px);
+  filter: brightness(0.5) saturate(1.1);
+}
+.jn-depth-2 {
+  transform: translateZ(-32px);
+  filter: brightness(0.36);
+}
+.jn-depth-3 {
+  transform: translateZ(-48px);
+  filter: brightness(0.26);
+}
+.jn-depth-4 {
+  transform: translateZ(-66px);
+  filter: brightness(0.16);
+}
+
+.jn-layer-shadow {
+  transform: translateZ(-120px) translateY(7%) scale(1.04);
+  filter: brightness(0) blur(22px);
+  opacity: 0.8;
+}
+
+.jn-layer-main {
+  transform: translateZ(0);
+  filter: drop-shadow(0 26px 30px rgb(0 0 0 / 0.6))
+    drop-shadow(0 0 2px rgb(255 120 140 / 0.35))
+    drop-shadow(0 0 46px rgb(215 25 63 / 0.35));
+}
+
+/* specular sweep: a light band travels across the emblem, masked to its shape */
+.jn-spec {
+  position: absolute;
+  inset: 0;
+  transform: translateZ(10px);
+  -webkit-mask-image: url("/logo-jn.webp");
+  mask-image: url("/logo-jn.webp");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgb(255 255 255 / 0.55) 48%,
+    rgb(255 190 200 / 0.35) 52%,
+    transparent 62%
+  );
+  background-size: 260% 100%;
+  background-position: 130% 0;
+  mix-blend-mode: soft-light;
+  animation: jn-sweep 7.5s var(--ease) infinite;
+  pointer-events: none;
+}
+
+@keyframes jn-sweep {
+  0%,
+  35% {
+    background-position: 130% 0;
+  }
+  80%,
+  100% {
+    background-position: -30% 0;
+  }
+}
+
+.jn-halo {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 150%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) translateZ(-160px);
+  background: radial-gradient(
+    closest-side,
+    rgb(215 25 63 / 0.38) 0%,
+    rgb(215 25 63 / 0.12) 45%,
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+/* floor: perspective disc with concentric rings + reflection */
+.jn-floor {
+  position: absolute;
+  left: 50%;
+  bottom: -16%;
+  width: 128%;
+  aspect-ratio: 1;
+  transform: translateX(-50%) rotateX(80deg) translateZ(-70px);
+  transform-origin: 50% 50%;
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, rgb(215 25 63 / 0.6), rgb(215 25 63 / 0.12) 55%, transparent 72%),
+    repeating-radial-gradient(
+      closest-side,
+      transparent 0 26px,
+      rgb(244 245 247 / 0.2) 26px 27px
+    );
+  box-shadow: 0 0 0 1px rgb(244 245 247 / 0.22);
+  -webkit-mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+  pointer-events: none;
+}
+
+.jn-reflect {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 94%;
+  height: 100%;
+  transform: scaleY(-1) translateZ(-20px);
+  opacity: 0.5;
+  filter: blur(1px) saturate(1.2);
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 46%);
+  mask-image: linear-gradient(to top, #000 0%, transparent 46%);
+  pointer-events: none;
+}
+
+/* pixel shards */
+.jn-shard {
+  position: absolute;
+  transform-style: preserve-3d;
+  transform: translateZ(var(--z, 80px)) rotate(var(--r, 0deg));
+  animation: jn-shard var(--dur, 8s) ease-in-out infinite alternate;
+  animation-delay: var(--delay, 0s);
+  pointer-events: none;
+}
+
+.jn-shard-accent {
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent-active));
+  box-shadow: 0 0 18px 2px rgb(232 48 85 / 0.55);
+}
+
+.jn-shard-silver {
+  background: linear-gradient(135deg, #e9ecf1, #7e8590);
+  box-shadow: 0 0 14px 1px rgb(244 245 247 / 0.25);
+}
+
+@keyframes jn-shard {
+  from {
+    transform: translate3d(0, 0, var(--z, 80px)) rotate(var(--r, 0deg));
+  }
+  to {
+    transform: translate3d(8px, -22px, var(--z, 80px)) rotate(calc(var(--r, 0deg) + 50deg));
+  }
+}
+
+/* orbit ring: thin silver ellipse with a crimson node */
+.jn-orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 124%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) rotateX(74deg) translateZ(-20px);
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+.jn-orbit-ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(244 245 247 / 0.16);
+  border-radius: 50%;
+  animation: jn-orbit 32s linear infinite;
+}
+
+.jn-orbit-ring::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: calc(50% - 3px);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-hover);
+  box-shadow: 0 0 14px 3px rgb(232 48 85 / 0.7);
+}
+
+@keyframes jn-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Cinematic film grain + light shafts on the hero */
+.jn-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  pointer-events: none;
+}
+
+.jn-shaft {
+  position: absolute;
+  top: -10%;
+  width: 22%;
+  height: 120%;
+  background: linear-gradient(
+    to bottom,
+    rgb(215 25 63 / 0.16),
+    transparent 70%
+  );
+  filter: blur(26px);
+  transform: skewX(-18deg);
+  pointer-events: none;
+}
+
+/* Section dividers: angled crimson hairline */
+.jn-hairline {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--line-strong) 20%,
+    var(--accent) 50%,
+    var(--line-strong) 80%,
+    transparent
+  );
+}
+
+/* ── Reduced motion: keep layout, drop movement ── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .jn-drift,
+  .jn-ember,
+  .jn-float,
+  .jn-blink,
+  .jn-spec,
+  .jn-orbit-ring,
+  .jn-shard,
+  .jn-enter,
+  .jn-enter-fade {
+    animation: none !important;
+  }
+
+  .jn-enter,
+  .jn-enter-fade {
+    opacity: 1 !important;
+  }
+
+  .jn-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Store: coins dialog + pulse ring ── */
+@keyframes jn-pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.jn-pulse-ring {
+  animation: jn-pulse-ring 2.8s ease-out infinite;
+}
+
+@keyframes jn-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+dialog.jn-dialog[open] {
+  animation: jn-pop 0.4s var(--ease) both;
+}
+
+dialog.jn-dialog::backdrop {
+  animation: jn-fade 0.3s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jn-pulse-ring,
+  dialog.jn-dialog[open],
+  dialog.jn-dialog::backdrop {
+    animation: none !important;
+  }
+}

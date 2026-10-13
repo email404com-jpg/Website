@@ -1,0 +1,47 @@
+# Jack Network
+
+Jack Network is a Minecraft server running practice PvP and survival game modes.
+Website: https://jacknetwork.in
+
+## How to join
+
+- Server address: play.jacknetwork.in
+- Supported editions: Java and Bedrock, same address, no separate port.
+- In Minecraft, go to Multiplayer, add the server address, and join.
+
+## Game modes
+
+- Practice PvP: player-versus-player combat to practice aim, timing, and game sense.
+- Survival: classic shared-world survival — gather, build, and hold your ground.
+
+## Coins
+
+Coins are the server's virtual currency for in-game perks and cosmetics.
+Ways to get coins:
+
+1. Play in-game chat games on the Minecraft server (free).
+2. Level up in the Discord server (automatic).
+3. Buy coins directly (payment integration coming soon; watch Discord for the announcement).
+
+Coin purchases, once credited, are final and non-refundable. See /terms for the full policy.
+
+## Website pages
+
+- / — homepage: hero, game modes, coins overview, live status, FAQ preview, Discord invite.
+- /coins — how coins work and store status.
+- /status — live server status: online state, player counts, and version, polled every 10 seconds.
+- /faq — frequently asked questions about joining, coins, editions, and accounts.
+- /rules — server rules for conduct, fair play, coins, and enforcement.
+- /terms — Terms of Service covering the server, website, Discord, and coin system.
+- /login — sign in with a Discord account (used for future features like the coin store and account linking).
+
+## Community and support
+
+- Discord: https://dsc.gg/jackknetwork
+- To report a player or a bug, join the Discord and open a support ticket.
+
+## Notes
+
+- The server is free to join and play. Coins are optional.
+- Jack Network is not affiliated with, endorsed by, or operated by Mojang AB or Microsoft.
+- Live server status on the website requires the status endpoint to be configured; when it is unavailable the site says so instead of estimating values.
