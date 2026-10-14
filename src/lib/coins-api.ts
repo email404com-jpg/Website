@@ -26,6 +26,33 @@ function adjustUrl(discordId: string): string {
 
 const KEYS = ["coins", "balance", "amount", "points", "value"];
 
+/**
+ * Node's fetch reports only "fetch failed"; the real reason (ECONNREFUSED,
+ * ENOTFOUND, ETIMEDOUT, TLS errors) sits in `cause`. Log scheme+host+port of
+ * the target — never the full URL, which carries the caller's Discord id.
+ */
+export function describeFetchError(e: unknown): string {
+  const err = e instanceof Error ? e : new Error(String(e));
+  const cause = (err as { cause?: unknown }).cause;
+  let detail = err.message;
+  if (cause instanceof Error) {
+    const code = (cause as NodeJS.ErrnoException).code;
+    if (code) detail += ` [${code}]`;
+    detail += ` cause=${cause.message}`;
+  }
+  return detail;
+}
+
+/** scheme://host:port only — no path, no query, no caller identity. */
+export function safeTarget(url: string): string {
+  try {
+    const u = new URL(url);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return "invalid-url";
+  }
+}
+
 function toNum(v: unknown): number | null {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v))) return Number(v);
@@ -94,7 +121,7 @@ export async function fetchBalance(discordId: string, uuid = ""): Promise<Balanc
     }
     return { ok: true, coins };
   } catch (e) {
-    console.error("[coins] balance request failed:", e instanceof Error ? e.message : e);
+    console.error(`[coins] balance request failed: ${describeFetchError(e)} -> ${safeTarget(url)}`);
     return { ok: false, reason: "api-unreachable" };
   }
 }
@@ -105,8 +132,9 @@ export async function adjustCoins(
   reason: string,
   idempotencyKey: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const url = adjustUrl(discordId);
   try {
-    const res = await fetch(adjustUrl(discordId), {
+    const res = await fetch(url, {
       method: "POST",
       headers: headers(true),
       body: JSON.stringify({ amount, reason, idempotency_key: idempotencyKey }),
@@ -119,7 +147,7 @@ export async function adjustCoins(
     }
     return { ok: true };
   } catch (e) {
-    console.error("[coins] adjust failed:", e instanceof Error ? e.message : e);
+    console.error(`[coins] adjust failed: ${describeFetchError(e)} -> ${safeTarget(url)}`);
     return { ok: false, reason: "api-unreachable" };
   }
 }
