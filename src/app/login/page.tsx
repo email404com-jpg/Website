@@ -39,8 +39,9 @@ export default function LoginPage() {
               Sign in to Jack Network
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-fg-muted">
-              Use your Discord account to authenticate. This is used for future
-              features like the coin store and account linking.
+              Use your Discord account to sign in to the coin store — check your
+              balance, link your Minecraft account, and earn coins on the AFK
+              page.
             </p>
             <div className="mt-8 w-full">
               <SignInButton />

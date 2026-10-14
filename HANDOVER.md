@@ -19,7 +19,7 @@ Written 2026-10-14 from a full inspection of the repo and the conversation histo
 2. Follow-ups, all done: fix the Discord login button's icon; avatar circle with Log-out menu after login; remove the Wikimedia credit line from the footer (moved to `/credits`); make the floating JN emblem more 3D; make the Discord icon show its "eyes".
 3. Big feature: the **store** at `store.jacknetwork.in` with SSO, coin balance from the owner's Discord-bot economy API, a coins menu (How to earn / Link MC account / AFK earn / Buy coins), and ranks "to be added later".
 4. Owner connected the real coins API; reported it works, then later reported the live header still shows **"Coins: —"** (see §9).
-5. Latest: owner asked for an **AFK page** (2 coins/minute, with ads). Implemented but **not working** because of a bug found in testing (§9, item 1).
+5. Latest: owner asked for an **AFK page** (2 coins/minute, with ads). Built, then found broken in testing (compare-and-set on a DateTime), then **fixed and verified this session** (§8, §9 item 1).
 
 ---
 
@@ -122,7 +122,7 @@ Main nav (`site.nav`): Modes (#modes), Coins (/coins), **Store** (external → s
 | `/api/coins` GET | session | Balance for the signed-in user (see §5). Returns `{state:"ok",coins}` / `unconfigured` / `unlinked` / `error` (+`reason`) |
 | `/api/link` GET/POST/DELETE | session | Link status / issue 6-char code (10 min) / unlink |
 | `/api/link/confirm` POST | `Bearer JN_LINK_API_KEY` (timing-safe) | For the Minecraft plugin: `{code, uuid, username}`; 409 if uuid already linked, 503 if key unset |
-| `/api/afk` GET/POST/DELETE | session | AFK state / heartbeat / stop — **currently broken, §9** |
+| `/api/afk` GET/POST/DELETE | session | AFK state / heartbeat / stop — fixed and verified this session, §8 |
 
 ---
 
@@ -152,11 +152,12 @@ Main nav (`site.nav`): Modes (#modes), Coins (/coins), **Store** (external → s
 ### 6.3 Minecraft linking
 Model `MinecraftLink` (`userId` unique, `uuid?` unique, `username?`, `code?` unique, `codeExpires?`, `linkedAt?`). Code alphabet `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, TTL 10 min. **The Minecraft plugin that runs `/link <code>` and calls `/api/link/confirm` does not exist yet.** Verified earlier with a simulated confirm call [reported].
 
-### 6.4 AFK earning (`/afk`) — implemented, NOT working
+### 6.4 AFK earning (`/afk`) — working, verified this session
 - Page `store/afk/page.tsx`; client `components/store/afk-client.tsx` (Start/Stop, ring countdown, "This session", "Today x / cap"; heartbeat every 30 s **only while running and `document.visibilityState === "visible"`**; random per-tab id; sends event `jn:coins-refresh` after an award).
-- Server `app/api/afk/route.ts`: rate `JN_AFK_RATE` (default 2/min), daily cap `JN_AFK_DAILY_CAP` (default 1440, UTC day). Beats <20 s apart ignored; gap >90 s restarts the minute; ≤45 s credited per beat; one active tab per user (`other-tab`); carry seconds → each full minute = `RATE` coins via `adjustCoins()` with idempotency key `afk:<userId>:<seq>`. Model `AfkState {userId unique, tabId, lastBeat, carry, seq, day, dayCoins}`.
+- Server `app/api/afk/route.ts`: rate `JN_AFK_RATE` (default 2/min), daily cap `JN_AFK_DAILY_CAP` (default 1440, UTC day). Beats <20 s apart ignored; gap >90 s restarts the minute; ≤45 s credited per beat; one active tab per user (`other-tab`); carry seconds → each full minute = `RATE` coins via `adjustCoins()` with idempotency key `afk:<userId>:<seq>`. Model `AfkState {userId unique, tabId, lastBeat, carry, seq, day, dayCoins, version}`.
+- **Concurrency:** every write is a compare-and-set on the integer `version` column (`updateMany({ where: { userId, version }, data: { ..., version: { increment: 1 } } })`); `count === 0` means another tab/request won and the handler returns the freshly-read row instead. The DateTime compare-and-set that was here before matched 0 rows on libsql, which is why this never credited (§9 item 1).
 - **Why server-authoritative:** the client only says "I'm here"; it can't choose amounts, so DevTools can't mint coins. Why visible-only: ads must be viewable and it limits multi-tab farming.
-- `adjustCoins()` derives the adjust URL by replacing a trailing `/balance` with `/adjust` (override: `JN_COINS_ADJUST_URL`). The adjust **response shape is [unknown]**; success = HTTP 2xx.
+- `adjustCoins()` derives the adjust URL by replacing a trailing `/balance` with `/adjust` (override: `JN_COINS_ADJUST_URL`). The adjust **response shape is [unknown]**; success = HTTP 2xx. A repeat idempotency key returns 2xx with `{"duplicate":true}`, which counts as success (the coins were already credited once).
 
 ### 6.5 Ads
 `components/store/ad-slot.tsx`: Google AdSense unit, renders **nothing** unless `NEXT_PUBLIC_ADSENSE_CLIENT` and `NEXT_PUBLIC_ADSENSE_SLOT` are set **at build time** (Next inlines `NEXT_PUBLIC_*`). Only used on the AFK page. Needs an approved AdSense account for `store.jacknetwork.in` and a `public/ads.txt`. Policy cautions given to the owner: never ask users to click ads, never auto-refresh ads; paying users for time-on-page is a grey area, paying for ad views/clicks is forbidden. **Not tested with real ads.** No CSP is configured, so the AdSense script loads.
@@ -208,26 +209,39 @@ Owner said "Leave it, store is working" — so DNS/hosting is evidently already 
 
 ## 8. Done / not done
 
-**Implemented and verified at some point [reported unless noted]:** full redesign of home and inner pages; CSS-3D hero; dark default; mobile nav; avatar/logout; Discord icons; credits page; SSO via shared cookie; store hub/practice/survival/coins pages; coins dialog; MC link flow (server side); session-token leak fix; coins balance reading (worked against a mock, owner said it worked, later "—" on live); `tsc`/`eslint`/`next build` pass [verified now].
-**Screenshots from earlier QA exist** in `/tmp/claude-0/shots/{before,v1,v2,store}` (ephemeral sandbox) incl. home at 320/390/768/1024/1440 and the store at 1440/390. I did **not** capture AFK-page screenshots, and I did not re-review any screenshots while writing this handover.
-**Implemented but broken:** `/api/afk` (§9.1).
-**Intentionally disabled / placeholder:** rank catalogs (empty), Buy Coins (no payments), AdSense (env-gated), AFK needs `JN_COINS_API_URL`.
+**Implemented and verified at some point [reported unless noted]:** full redesign of home and inner pages; CSS-3D hero; dark default; mobile nav; avatar/logout; Discord icons; credits page; SSO via shared cookie; store hub/practice/survival/coins pages; coins dialog; MC link flow (server side); session-token leak fix; coins balance reading (worked against a mock, owner said it worked, later "—" on live); `tsc`/`eslint`/`next build` pass **[verified again this session]**.
+
+**AFK earning — fixed and verified end to end this session [verified].** `AfkState` gained an integer `version` column (`prisma/schema.prisma` + `scripts/init-db.mjs`, including a guarded `ALTER TABLE` for databases that already have the table). `/api/afk` now does its compare-and-set on `version` instead of a DateTime. Verified against a mock coins API (balance + `adjust` with idempotency keys) with a 34-assertion test, plus a real Chromium session: +2 coins/minute, one `adjust` per award, same key never double-credits, 5 concurrent beats credit exactly one minute, second tab → `other-tab`, daily cap → `capped`, UTC day rollover resets the cap. `/api/coins` returns the live balance and the store header updated from 12,450 → 12,452 after an award. Screenshots at 1440 and 390 inspected (no overflow, no console errors).
+
+**Copy and configuration this session [verified]:** `.env.example` created (it did not exist) with every variable the code reads, including the five that were missing; stale "store opens soon / coming soon" wording replaced with what is actually true in `src/lib/site.ts`, `public/llms.txt`, `/login`, `/coins`; `site.coins.sources` now lists AFK earning as a real fourth way to earn; README's non-existent `rules.txt` reference replaced with `AGENTS.md` + `HANDOVER.md`.
+
+**Intentionally disabled / placeholder:** rank catalogs (empty — waiting on the owner), Buy Coins (no payment provider), AdSense (env-gated, not tested with real ads).
 **Not built:** Minecraft plugin `/link`; rank purchase flow; payment provider; leaderboard; anything not listed here.
+**Cosmetic fixes this session [verified]:** the AFK ring drew a stray crimson dot at 0% (round line-cap on a zero-length dash) — fixed; the page said "Next coins in 59s" while idle — now "Press start to earn".
 
 ---
 
 ## 9. Known bugs, limitations, exact next steps
 
-1. **AFK never credits (verified bug).** `api/afk/route.ts` does its compare-and-set with `prisma.afkState.updateMany({ where: { userId, lastBeat: row.lastBeat } ... })`. I proved with a probe script that on this libsql adapter that `updateMany` matches **0 rows** even with the value just read. Result: after the first beat, state never updates, `carry` stays <60, `adjust` is never called. In the end-to-end test: beat1 `running`, other tab `other-tab` (works), but after simulating 45 s twice, carry stayed 0 and the mock saw no `adjust`.
-   **Fix (do this first):** add `version Int @default(0)` to `AfkState` (schema **and** `scripts/init-db.mjs`; because the table may already exist on the live DB, add a guarded `ALTER TABLE "AfkState" ADD COLUMN "version" INTEGER NOT NULL DEFAULT 0` after checking `PRAGMA table_info`). In the route, read `version`, and `updateMany({ where: { userId, version: row.version }, data: { ..., version: { increment: 1 } } })`; treat `count === 0` as "someone else won". Keep idempotency keys as they are. Then re-test: seed user, mock API, two beats with time faked (update `lastBeat` backwards in SQLite), expect `+2` and mock `adjust` call, same key twice → no double credit, second tab → `other-tab`, cap → `capped`, plus a UI screenshot pass at 1440/390.
-2. **Live header shows "Coins: —" (owner report, cause unknown).** Open `https://store.jacknetwork.in/api/coins` while logged in and read `reason`, and read the server console. Check in order: `JN_COINS_API_URL`/`KEY` set on the real host and the app restarted; host can reach `power2.vektalnodes.in:19138` (plain http, port may be blocked); the user has a `discord` `Account` row; the API returns 404 for users with no economy record (decide whether to show 0); real JSON field name (then tighten `extractBalance`).
-3. **Stale copy:** FAQ "The store opens soon", `site.coins.sources[2]` "Payment integration coming soon", `llms.txt` ("used for future features like the coin store"), login page text. The store exists now; ranks/payments don't. Update wording honestly; `llms.txt` should also mention `store.jacknetwork.in`. `/store` pages are not in `sitemap.ts` (different host) — consider a store sitemap/robots.
-4. `.env.example` missing new variables; README mentions non-existent `rules.txt`; `src/auth.config.ts` looks unused.
-5. AFK policy/UX decisions still open: daily cap value (default 1440), anti-bot (captcha), whether AdSense will approve an "earn by waiting" page.
-6. Cosmetic: floor rings under the hero emblem are faint; AFK copy is generic and editable in `src/lib/store.ts`.
-7. First-time Discord users may have no economy record → balance `—` (see 2).
+1. ~~**AFK never credits.**~~ **FIXED this session.** Root cause was `updateMany({ where: { lastBeat: <DateTime read from DB> } })` matching 0 rows on the libsql adapter, so state never advanced and `adjust` was never called. Fixed with an integer `version` column used as a compare-and-set token (`version: { increment: 1 }` in the `data`). `scripts/init-db.mjs` also gained a guarded `ALTER TABLE "AfkState" ADD COLUMN "version"` that checks `PRAGMA table_info` first, so the live database upgrades on its next `npm start` without `prisma migrate`. Verified: 34/34 assertions against a mock coins API, plus a real browser session where the header balance ticked up after an award. See §8.
 
-Suggested order: (1) fix AFK CAS + test, (2) diagnose live `—`, (3) update env example/copy, (4) rank catalog + purchase flow once the owner supplies names/prices/perks and an in-game grant mechanism, (5) Minecraft `/link` plugin, (6) payments.
+2. **Live header shows "Coins: —" — cause narrowed, not closed.** What I could establish from outside the owner's network this session:
+   - `https://jacknetwork.in` and `https://store.jacknetwork.in` both return **502 Bad Gateway** from `nginx/1.18.0 (Ubuntu)` at `103.212.136.243`. The proxy is up, the Node app behind it is not answering. **This alone explains a broken header** — check the panel/container is running before anything else.
+   - The economy API at `power2.vektalnodes.in:19138` is on the same IP and is **healthy**: `GET /health` → `{"bot_online":true,"guilds":2,"ok":true}`. Unauthenticated `GET .../balance` → HTTP 401 `{"error":{"code":"missing_token","message":"Provide the token as 'Authorization: Bearer <token>'."}}`. So a wrong or missing `JN_COINS_API_KEY` would surface as reason `api-http-401`.
+   - `extractBalance()` was exercised against 27 response shapes: it handles a bare number, `coins|balance|amount|points|value` at any depth to 4, nested objects, and case variants. It cannot read a key outside that list (e.g. `wallet`) or a bare number inside an array — deliberately, because guessing would invent a balance. **Still needed from the owner: one sample balance response and one sample adjust response, token redacted.** Also ask them to open `/api/coins` while logged in and read `reason` (it is already in the JSON and in the header's hover title), and to paste the matching `[coins]` line from the server log — `no-balance-field` now logs the top-level keys to make that one line sufficient.
+   - If the API returns 404 for a Discord user with no economy record yet, reason is `api-http-404`. Product decision still open: show 0, or keep the honest `—`.
+
+3. ~~**Stale copy.**~~ **DONE this session.** FAQ "The store opens soon", `site.coins.sources` "Payment integration coming soon", `llms.txt` ("used for future features like the coin store") and the login page text were all rewritten to what is true: the store exists and works for balance, linking and AFK earning; buying coins and the rank catalog are not live. `llms.txt` now has a Coin store section. `/store/*` is still absent from `sitemap.ts` (different host) — a store sitemap/robots is optional future work.
+
+4. ~~**.env.example missing variables; README mentions non-existent `rules.txt`.**~~ **DONE this session.** `.env.example` now exists with every variable the code reads (it was absent entirely, not merely stale) and is un-ignored in `.gitignore`. README points at `AGENTS.md` + `HANDOVER.md` and documents the database rule. Still open: `src/auth.config.ts` is unused (leftover duplicate provider config) — safe to delete, not yet deleted.
+
+5. AFK policy/UX decisions still open: daily cap value (default 1440, configurable via `JN_AFK_DAILY_CAP`), anti-bot (captcha), whether AdSense will approve an "earn by waiting" page. Note for AdSense: paying users for time on page is a grey area; paying for ad views or clicks is forbidden. No `public/ads.txt` yet.
+
+6. **Waiting on the owner before Task 4 (ranks) can start:** rank names, prices in coins, perks, and how a rank is granted in game (console command? LuckPerms group? a plugin HTTP call?). Once those arrive, fill `catalog.practice.ranks` / `catalog.survival.ranks` in `src/lib/store.ts` and build the purchase flow: `adjustCoins()` with a **negative** amount and an idempotency key, then grant. **Do not ship `available: true` before a real grant mechanism exists** — a charged player with no rank is worse than an honest "coming soon".
+
+7. Cosmetic (unchanged): floor rings under the hero emblem are faint; AFK copy is generic and editable in `src/lib/store.ts`.
+
+Suggested order: (1) owner restarts/confirms the live app (currently 502) and re-tests the header, (2) owner supplies one balance + one adjust sample so `extractBalance` can be tightened for real, (3) owner supplies rank data for Task 4, (4) Minecraft `/link` plugin, (5) payments.
 
 ---
 
@@ -254,7 +268,18 @@ node scripts/init-db.mjs && npx next build
 # store host: http://store.localhost:3100  (Playwright cookie: name __Secure-authjs.session-token, domain store.localhost, secure:true)
 # or curl with  -H "Host: store.localhost:3100" -H "Cookie: __Secure-authjs.session-token=test-session-token"
 ```
-Helper scripts used during this work (seed a user+session, mock coins API with balance+adjust, server restart script, Playwright store/auth tests, fast-forward `lastBeat`) lived in `/tmp/claude-0/` and are copied to `handover-tools/` next to this project; they are **ephemeral test tooling, not part of the app**. Paths inside them point to `/home/claude/site-src` and `/tmp/claude-0` and need adjusting.
+Helper scripts used during this work live in `handover-tools/` (tracked, paths point at the old sandbox and need adjusting) and in `.qa/` in this checkout (not tracked; excluded via `.git/info/exclude`). The `.qa/` set is what this session actually ran and is the fastest way to re-verify the AFK fix:
+
+- `.qa/coins-mock.mjs 3200` — mock of the economy API: `GET .../users/:id/balance`, `POST .../users/:id/adjust` with idempotency keys, plus `GET /__state` and `POST /__reset` for assertions.
+- `.qa/serve.sh` — starts the production server on :3100 with test env (never use `pkill -f`; it uses a pid file and `fuser -k`).
+- `.qa/seed.mjs` — seeds user `u1`, a Discord account and session `test-session-token`.
+- `.qa/ff.mjs <secondsBack> [dayCoins] [carry] [seq] [version]` — fast-forwards the AFK row.
+- `.qa/afk-test.mjs` — the 34-assertion end-to-end suite (requires mock + server).
+- `.qa/afk-live4.mjs` — real Chromium session: Start, wait for two heartbeats, print the award.
+- `.qa/shoot-store2.mjs`, `.qa/shoot-main.mjs` — screenshots at 1440 and 390 into `/tmp/opencode/jn/shots`.
+- `.qa/extract-balance-test.mjs` — `extractBalance` behaviour matrix (needs `tsc` compile first; see the file).
+
+These are **ephemeral test tooling, not part of the app.** In this sandbox Chromium only runs via the `chromium_headless_shell-1243` binary (the `-1248` build traps under proot); the scripts already point at it. Build with `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true` and `npx next build` directly.
 
 ---
 

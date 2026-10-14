@@ -21,9 +21,20 @@ Ways to get coins:
 
 1. Play in-game chat games on the Minecraft server (free).
 2. Level up in the Discord server (automatic).
-3. Buy coins directly (payment integration coming soon; watch Discord for the announcement).
+3. Keep the AFK page open on the store (2 coins per minute, daily limit).
+4. Buy coins directly — payments are not live yet; watch Discord for the announcement.
 
 Coin purchases, once credited, are final and non-refundable. See /terms for the full policy.
+
+## Coin store
+
+https://store.jacknetwork.in — the store, same login as the main site.
+
+- Check your coin balance (from the Discord economy, no separate account).
+- Link your Minecraft account with a short code (Java and Bedrock).
+- AFK earning: keep the page open and visible to earn coins every minute.
+- Practice PvP and Survival sections list ranks and perks as they open.
+- Buying coins is not available yet — no payment provider is connected.
 
 ## Website pages
 
@@ -33,7 +44,8 @@ Coin purchases, once credited, are final and non-refundable. See /terms for the 
 - /faq — frequently asked questions about joining, coins, editions, and accounts.
 - /rules — server rules for conduct, fair play, coins, and enforcement.
 - /terms — Terms of Service covering the server, website, Discord, and coin system.
-- /login — sign in with a Discord account (used for future features like the coin store and account linking).
+- /login — sign in with a Discord account (used for the coin store and account linking).
+- store.jacknetwork.in — the coin store (balance, Minecraft linking, AFK earning, rank catalog).
 
 ## Community and support
 

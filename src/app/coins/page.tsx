@@ -18,7 +18,7 @@ export default function CoinsPage() {
         <PageHero
           eyebrow="Economy"
           title="Jack Network coins"
-          description="Coins are the server's virtual currency. Earn them for free or buy them — your choice."
+          description="Coins are the server's virtual currency. Earn them for free, or buy them once payments open."
           art="/media/practice-nether.webp"
         />
         <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
@@ -49,9 +49,10 @@ export default function CoinsPage() {
                 Store status
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-fg-muted sm:text-base">
-                The payment system is being integrated. When it goes live, you
-                will be able to buy coins directly from this website. Watch
-                Discord for the announcement.
+                The store is live at store.jacknetwork.in: check your balance,
+                link your Minecraft account, and earn coins on the AFK page.
+                Buying coins with real money is not live yet — payments are
+                still being integrated. Watch Discord for the announcement.
               </p>
             </div>
           </Reveal>

@@ -44,6 +44,21 @@ function CoinIcon({ name }: { name: string }) {
       </svg>
     );
   }
+  if (name === "afk") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className={shared}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="8.25" />
+        <path d="M12 7.5V12l3 2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
   return (
     <svg
       viewBox="0 0 24 24"

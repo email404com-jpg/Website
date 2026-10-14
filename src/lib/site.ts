@@ -26,7 +26,7 @@ export const site = {
     bodyA:
       "Jack Network is a Minecraft server built around two experiences: the sharp end of Practice PvP and the slow burn of Survival. Both run on one address for Java and Bedrock — no separate installs, no second IP.",
     bodyB:
-      "Coins tie it together: earn them free in chat games and Discord, or buy them when the store opens. The Discord is where announcements land first and where support lives.",
+      "Coins tie it together: earn them in chat games, in Discord, or while you are AFK on the store site. Buying coins directly opens once payments go live. The Discord is where announcements land first and where support lives.",
     facts: [
       { value: "Java + Bedrock", label: "One address, no separate port" },
       { value: "Free to play", label: "Coins are optional" },
@@ -108,11 +108,19 @@ export const site = {
         icon: "discord",
       },
       {
-        id: "purchase",
+        id: "afk",
         index: "03",
+        name: "AFK earning",
+        summary:
+          "Keep the AFK page open on the store site and earn coins every minute, up to a daily limit.",
+        icon: "afk",
+      },
+      {
+        id: "purchase",
+        index: "04",
         name: "Buy coins",
         summary:
-          "Purchase coins directly. Payment integration coming soon.",
+          "Buy coins in the store. Payments are not live yet — watch Discord for the announcement.",
         icon: "coin",
       },
     ],
@@ -124,7 +132,7 @@ export const site = {
     },
     {
       q: "How can I get coins?",
-      a: "You can earn coins three ways: play in-game chat games on the Minecraft server, level up your Discord account, or buy them directly. The store opens soon.",
+      a: "Four ways: play in-game chat games on the Minecraft server, level up your Discord account, keep the AFK page open on the store site, or buy them. Buying coins is not live yet — watch Discord for the announcement.",
     },
     {
       q: "Is the server free to play?",
@@ -132,7 +140,7 @@ export const site = {
     },
     {
       q: "What can I spend coins on?",
-      a: "Coins can be spent on in-game perks and cosmetics. The full store catalog will be listed once the payment system goes live.",
+      a: "Coins are spent on in-game perks and cosmetics. What is available is listed on the store at store.jacknetwork.in — the catalog grows as new ranks open.",
     },
     {
       q: "Can I get a refund on coin purchases?",
