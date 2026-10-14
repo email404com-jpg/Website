@@ -54,11 +54,11 @@ export const store = {
 
   /** Copy for the "AFK earn coins" panel. Edit to match the in-game setup. */
   afk: {
-    summary: "Stay active in the AFK area and coins add up while you are away.",
+    summary: "Keep the AFK page open and earn 2 coins every minute.",
     steps: [
-      "Link your Minecraft account to your Discord login.",
-      "Join play.jacknetwork.in on Java or Bedrock.",
-      "Head to the AFK area and stay put — coins are credited automatically.",
+      "Open the AFK page and press Start.",
+      "Keep the tab open and visible — coins arrive every minute.",
+      "Stop any time. A daily limit applies.",
     ],
     note: "Exact rates and the AFK location are shown in game.",
   },

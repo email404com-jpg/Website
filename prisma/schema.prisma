@@ -44,6 +44,7 @@ model User {
   accounts Account[]
   sessions Session[]
   mcLink   MinecraftLink?
+  afk      AfkState?
 }
 
 model VerificationToken {
@@ -68,16 +69,15 @@ model MinecraftLink {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-/// Tracks AFK earning state per user per tab.
 model AfkState {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  tabId     String
-  lastBeat  DateTime
-  carry     Int      @default(0) // accumulated seconds
-  seq       Int      @default(0) // incremented per credit
-  day       Int      @default(0) // UTC day number (days since epoch)
-  dayCoins  Int      @default(0) // coins earned this UTC day
+  id       String   @id @default(cuid())
+  userId   String   @unique
+  tabId    String
+  lastBeat DateTime
+  carry    Int      @default(0)
+  seq      Int      @default(0)
+  day      String
+  dayCoins Int      @default(0)
 
-  @@index([userId])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

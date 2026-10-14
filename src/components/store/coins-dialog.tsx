@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { site } from "@/lib/site";
 import { store } from "@/lib/store";
 import { CoinGlyph } from "./coin-icon";
-import { useAfk } from "./use-afk";
 
 type View = "menu" | "earn" | "link" | "afk" | "buy";
 
@@ -292,8 +291,6 @@ function LinkView({ onLinked }: { onLinked: () => void }) {
 }
 
 function AfkView() {
-  const { state, start, stop } = useAfk();
-
   return (
     <>
       <PanelTitle eyebrow="Passive" title="AFK earning" />
@@ -305,45 +302,8 @@ function AfkView() {
             <Icon name="afk" className="h-7 w-7" />
           </span>
         </div>
-        <div className="min-w-0">
-          <p className="text-sm leading-relaxed text-fg-muted">{store.afk.summary}</p>
-          <p className="font-mono mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-fg-subtle tabular-nums">
-            <span>
-              Session <span className="text-fg">+{state.sessionEarned.toLocaleString("en-US")}</span>
-            </span>
-            <span>
-              Today{" "}
-              <span className="text-fg">
-                {state.todayEarned.toLocaleString("en-US")}
-                {state.cap !== null ? ` / ${state.cap.toLocaleString("en-US")}` : ""}
-              </span>
-            </span>
-            {state.rate !== null ? <span>Rate {state.rate}/min</span> : null}
-            {state.running ? (
-              <span className={state.secondsToBeat <= 5 ? "text-accent-ink" : undefined}>
-                Next credit in {state.secondsToBeat}s
-              </span>
-            ) : null}
-          </p>
-        </div>
+        <p className="text-sm leading-relaxed text-fg-muted">{store.afk.summary}</p>
       </div>
-
-      {state.running ? (
-        <button type="button" onClick={stop} disabled={state.busy} className="jn-btn jn-btn-ghost mt-6 disabled:opacity-50">
-          Stop AFK earning
-        </button>
-      ) : (
-        <button type="button" onClick={start} disabled={state.busy} className="jn-btn jn-btn-primary mt-6 disabled:opacity-50">
-          Start AFK earning
-        </button>
-      )}
-
-      {state.message ? (
-        <p className="mt-4 text-sm text-error" role="status">
-          {state.message}
-        </p>
-      ) : null}
-
       <ol className="mt-6 border-t border-line">
         {store.afk.steps.map((t, i) => (
           <li key={t} className="flex items-center gap-5 border-b border-line py-4">
@@ -352,7 +312,9 @@ function AfkView() {
           </li>
         ))}
       </ol>
-      <p className="mt-5 text-xs text-fg-subtle">{store.afk.note}</p>
+      <a href="/afk" className="jn-btn jn-btn-primary mt-6">
+        Open AFK page <span aria-hidden="true">→</span>
+      </a>
     </>
   );
 }

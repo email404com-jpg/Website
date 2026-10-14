@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import type { ReactNode } from "react";
 import localFont from "next/font/local";
 import { site } from "@/lib/site";
 import { Providers } from "@/components/session-provider";
@@ -72,11 +71,10 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      suppressHydrationWarning
       className={`${body.variable} ${display.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <head>

@@ -84,7 +84,7 @@ const STATEMENTS = [
     "lastBeat" TEXT NOT NULL,
     "carry" INTEGER NOT NULL DEFAULT 0,
     "seq" INTEGER NOT NULL DEFAULT 0,
-    "day" INTEGER NOT NULL DEFAULT 0,
+    "day" TEXT NOT NULL,
     "dayCoins" INTEGER NOT NULL DEFAULT 0,
     CONSTRAINT "AfkState_userId_fkey" FOREIGN KEY ("userId")
       REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE

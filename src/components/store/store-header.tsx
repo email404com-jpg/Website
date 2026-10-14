@@ -24,7 +24,7 @@ function CoinButton() {
     state.status === "unlinked"
       ? "Link your Minecraft account to see your balance"
       : state.status === "unconfigured" || state.status === "error"
-        ? "Balance unavailable right now"
+        ? `Balance unavailable${state.status === "error" && state.reason ? ` (${state.reason})` : ""}`
         : undefined;
 
   return (
