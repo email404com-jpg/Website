@@ -225,17 +225,17 @@ Owner said "Leave it, store is working" — so DNS/hosting is evidently already 
 
 1. ~~**AFK never credits.**~~ **FIXED this session.** Root cause was `updateMany({ where: { lastBeat: <DateTime read from DB> } })` matching 0 rows on the libsql adapter, so state never advanced and `adjust` was never called. Fixed with an integer `version` column used as a compare-and-set token (`version: { increment: 1 }` in the `data`). `scripts/init-db.mjs` also gained a guarded `ALTER TABLE "AfkState" ADD COLUMN "version"` that checks `PRAGMA table_info` first, so the live database upgrades on its next `npm start` without `prisma migrate`. Verified: 34/34 assertions against a mock coins API, plus a real browser session where the header balance ticked up after an award. See §8.
 
-2. **Live coins fetch fails at the network layer: `[coins] Balance request failed: fetch failed`.** The app is running again (this is a *server-side* line, so the earlier total 502 is over — confirm `https://jacknetwork.in/` still returns 200). Diagnosis so far:
-   - `fetch failed` is Node/undici's **generic** error; the actual reason lives in `e.cause`. The old log printed only `e.message`, which is why the line was useless. `fetchBalance`/`adjustCoins` now log `describeFetchError(e)` plus `safeTarget(url)` → code + cause + `scheme://host:port`. `safeTarget` deliberately omits path/query so a caller's Discord id never lands in a log.
-   - **`power2.vektalnodes.in` resolves to `103.212.136.243` — the same host as the website.** From the sandbox: `http://power2.vektalnodes.in:19138/health` → **200**; `https://power2.vektalnodes.in:19138` → **000** (no TLS on that port).
-   - Two candidate causes, distinguishable by the next log line:
-     - **Scheme mismatch** — `JN_COINS_API_URL` set to `https://` against a plain-HTTP port. Code: `ERR_SSL_WRONG_VERSION_NUMBER`. Fix: use `http://`.
-     - **Hairpin NAT / container egress** — the container reaching out to its own public IP. Codes: `ECONNREFUSED` or `ETIMEDOUT`. Fix: point `JN_COINS_API_URL` at `http://127.0.0.1:19138/...` (same box) or the container's docker-network address.
-     - `ENOTFOUND` would instead mean `JN_COINS_API_URL` has a bad hostname.
-   - **Next step for the owner:** redeploy so the new logging is live, reproduce once, and paste the new `[coins] balance request failed:` line. That single line settles it.
-   - The bot itself is still **healthy and not the problem**: `/health` → 200 `{"bot_online":true,"guilds":2,"ok":true}` across consecutive probes; `19138` open. **Nothing to add or remove in the Crownix bot config.**
+2. ~~**Live coins fetch fails: `[coins] Balance request failed: fetch failed`.**~~ **ROOT CAUSE FOUND this session.** The log named it: `cause=unknown scheme` with `safeTarget()` reporting `power2.vektalnodes.in://`. **`JN_COINS_API_URL` was set without an `http://` prefix**, so Node parsed `power2.vektalnodes.in:19138` as the *protocol* and undici refused the request. The owner's own curl works because it starts with `http://`:
+   ```
+   curl -H "Authorization: Bearer API_KEY" \
+     http://power2.vektalnodes.in:19138/api/v1/economy/<guild>/users/<discord_id>/balance
+   ```
+   - **Fix shipped:** `withScheme()` in `coins-api.ts` prepends `http://` when a template has no `scheme://`, so this config mistake can no longer break the store. `checkPlaceholder()` additionally logs once if the template contains neither `{discordId}` nor `{uuid}` — without `{discordId}` every caller would be sent to one fixed URL and see someone else's balance.
+   - **Owner should still set the value correctly:** `JN_COINS_API_URL=http://power2.vektalnodes.in:19138/api/v1/economy/<guild>/users/{discordId}/balance`. Confirmed: `http://…:19138` → 200, `https://…:19138` → 000 (no TLS on that port, so `https://` would fail with `ERR_SSL_WRONG_VERSION_NUMBER`).
+   - **How it was pinned down:** `fetch failed` is undici's generic message; `e.cause` holds the reason. The old log printed only `e.message`, which is why this was invisible. `describeFetchError()` + `safeTarget()` now log cause + code + `scheme://host:port` (path omitted so no Discord id reaches the log). Reproduced byte-for-byte in `.qa/scheme-test.mjs` before and after the fix.
+   - The bot is **healthy and not the problem**: `/health` → 200 `{"bot_online":true,"guilds":2,"ok":true}`. **Nothing to add or remove in the Crownix bot config.**
    - Secondary issue: the TLS certificate covers only `jacknetwork.in` and `www.jacknetwork.in` — **`store.jacknetwork.in` is not a SAN**. Issue a cert including it (wildcard `*.jacknetwork.in`) or put Cloudflare in front. The session cookie is `Secure`, so it will not travel over plain HTTP; the store genuinely needs working HTTPS there.
-   - Still outstanding: one sample **adjust** response (token redacted) to confirm success detection, and the `reason` from `/api/coins` while logged in. Balance shape is now confirmed: `{"balance":130,"currency":"coins","guild_id":...,"user_id":...}` — `extractBalance` reads it correctly (locked in as a regression case; 27 shapes total, depth ≤4, deliberately no guessing outside that list).
+   - Still outstanding: one sample **adjust** response (token redacted) to confirm success detection, and the `reason` from `/api/coins` while logged in. Balance shape is confirmed: `{"balance":130,"currency":"coins","guild_id":...,"user_id":...}` — `extractBalance` reads it correctly (locked in as a regression case; 27 shapes total, depth ≤4, deliberately no guessing outside that list).
 
 3. ~~**Stale copy.**~~ **DONE this session.** FAQ "The store opens soon", `site.coins.sources` "Payment integration coming soon", `llms.txt` ("used for future features like the coin store") and the login page text were all rewritten to what is true: the store exists and works for balance, linking and AFK earning; buying coins and the rank catalog are not live. `llms.txt` now has a Coin store section. `/store/*` is still absent from `sitemap.ts` (different host) — a store sitemap/robots is optional future work.
 
@@ -247,7 +247,7 @@ Owner said "Leave it, store is working" — so DNS/hosting is evidently already 
 
 7. Cosmetic (unchanged): floor rings under the hero emblem are faint; AFK copy is generic and editable in `src/lib/store.ts`.
 
-Suggested order: (1) deploy the new error logging and paste the resulting `[coins] balance request failed:` line (it names the code — `ERR_SSL_WRONG_VERSION_NUMBER` = scheme, `ECONNREFUSED`/`ETIMEDOUT` = hairpin NAT), (2) fix `JN_COINS_API_URL` accordingly, (3) owner confirms `store.jacknetwork.in` has a cert covering it, (4) owner supplies one adjust sample, (5) rank data for Task 4, (6) Minecraft `/link` plugin, (7) payments.
+Suggested order: (1) deploy `9b2d297`+ (scheme fix + root-cause logging), (2) set `JN_COINS_API_URL` to the full `http://power2.vektalnodes.in:19138/...` value **with** `{discordId}` and confirm the header shows a real balance, (3) owner supplies one adjust sample, (4) fix the `store.jacknetwork.in` cert SAN, (5) rank data for Task 4, (6) Minecraft `/link` plugin, (7) payments.
 
 ---
 

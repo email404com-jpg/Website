@@ -11,8 +11,36 @@ function headers(json = false): Record<string, string> {
   return h;
 }
 
+/**
+ * The owner's working curl uses `http://host:port/...`. If that prefix is
+ * missing from the env var, Node parses `host:port/path` as protocol
+ * `host:port` and fetch fails with "unknown scheme". Prepend http:// then.
+ */
+export function withScheme(raw: string): string {
+  if (!raw) return raw;
+  return /^[a-z][a-z0-9+\-.]*:\/\//i.test(raw) ? raw : `http://${raw}`;
+}
+
+/**
+ * A template without {discordId} would send every caller to one fixed URL,
+ * silently showing someone else's balance. Log it once per process.
+ */
+let warnedPlaceholder = false;
+function checkPlaceholder(): void {
+  if (warnedPlaceholder) return;
+  const t = process.env.JN_COINS_API_URL ?? "";
+  if (t && !t.includes("{discordId}") && !t.includes("{uuid}")) {
+    warnedPlaceholder = true;
+    console.error(
+      "[coins] JN_COINS_API_URL has no {discordId} placeholder — every request hits the same URL. " +
+        "Expected .../users/{discordId}/balance",
+    );
+  }
+}
+
 function balanceUrl(discordId: string, uuid = ""): string {
-  return (process.env.JN_COINS_API_URL ?? "")
+  checkPlaceholder();
+  return withScheme(process.env.JN_COINS_API_URL ?? "")
     .replaceAll("{discordId}", encodeURIComponent(discordId))
     .replaceAll("{uuid}", encodeURIComponent(uuid));
 }
@@ -20,7 +48,7 @@ function balanceUrl(discordId: string, uuid = ""): string {
 /** .../balance -> .../adjust (override with JN_COINS_ADJUST_URL). */
 function adjustUrl(discordId: string): string {
   const explicit = process.env.JN_COINS_ADJUST_URL;
-  if (explicit) return explicit.replaceAll("{discordId}", encodeURIComponent(discordId));
+  if (explicit) return withScheme(explicit).replaceAll("{discordId}", encodeURIComponent(discordId));
   return balanceUrl(discordId).replace(/\/balance\/?(\?.*)?$/, "/adjust");
 }
 
