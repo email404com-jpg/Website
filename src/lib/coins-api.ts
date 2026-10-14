@@ -30,6 +30,30 @@ export function hasIdPlaceholder(t: string): boolean {
   return t.includes("{discordId}") || t.includes("{uuid}");
 }
 
+/**
+ * Name every defect in the configured template so one log line is enough to
+ * fix it. Reports scheme://host only — never the raw value, in case a token
+ * was pasted into the URL.
+ */
+export function configProblem(raw: string): string | null {
+  if (!raw) return null;
+  const problems: string[] = [];
+  if (!hasIdPlaceholder(raw)) problems.push("no {discordId} placeholder");
+  try {
+    const path = new URL(withScheme(raw)).pathname;
+    if (path === "/" || path === "") {
+      problems.push("no path (host:port only, so it hits / instead of the endpoint)");
+    }
+  } catch {
+    problems.push("not a parseable URL");
+  }
+  if (problems.length === 0) return null;
+  return (
+    `${problems.join("; ")}; resolves to ${safeTarget(withScheme(raw))}. ` +
+    "Expected http://<bot-host>:<port>/api/v1/economy/<guild>/users/{discordId}/balance"
+  );
+}
+
 /** The adjust template if explicitly configured, else the balance template. */
 function configuredTemplate(adjust: boolean): string {
   if (adjust && process.env.JN_COINS_ADJUST_URL) return process.env.JN_COINS_ADJUST_URL;
@@ -123,12 +147,10 @@ export type BalanceResult =
 
 export async function fetchBalance(discordId: string, uuid = ""): Promise<BalanceResult> {
   const tmpl = configuredTemplate(false);
-  if (tmpl && !hasIdPlaceholder(tmpl)) {
-    console.error(
-      "[coins] JN_COINS_API_URL has no {discordId} placeholder — refusing to call a fixed URL, " +
-        "which would show one player's balance to everyone. Set .../users/{discordId}/balance",
-    );
-    return { ok: false, reason: "missing-discord-id" };
+  const bad = configProblem(tmpl);
+  if (bad) {
+    console.error(`[coins] refusing balance call: ${bad}`);
+    return { ok: false, reason: "bad-coins-url" };
   }
   const url = balanceUrl(discordId, uuid);
   try {
@@ -173,14 +195,13 @@ export async function adjustCoins(
   reason: string,
   idempotencyKey: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  // On adjust this matters more: a fixed URL would credit the wrong player.
+  // On adjust this matters more: a fixed or path-less URL could credit
+  // the wrong player's balance.
   const tmpl = configuredTemplate(true);
-  if (tmpl && !hasIdPlaceholder(tmpl)) {
-    console.error(
-      "[coins] coins template has no {discordId} placeholder — refusing to adjust, which would " +
-        "credit the wrong player's balance. Set .../users/{discordId}/adjust",
-    );
-    return { ok: false, reason: "missing-discord-id" };
+  const bad = configProblem(tmpl);
+  if (bad) {
+    console.error(`[coins] refusing adjust call: ${bad}`);
+    return { ok: false, reason: "bad-coins-url" };
   }
   const url = adjustUrl(discordId);
   try {

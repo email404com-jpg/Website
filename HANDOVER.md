@@ -231,7 +231,12 @@ Owner said "Leave it, store is working" — so DNS/hosting is evidently already 
      http://power2.vektalnodes.in:19138/api/v1/economy/<guild>/users/<discord_id>/balance
    ```
    - **Fix shipped:** `withScheme()` in `coins-api.ts` prepends `http://` when a template has no `scheme://`, so this config mistake can no longer break the store. `checkPlaceholder()` additionally logs once if the template contains neither `{discordId}` nor `{uuid}` — without `{discordId}` every caller would be sent to one fixed URL and see someone else's balance.
+   - **The owner's live value was read and it is wrong three ways:** `JN_COINS_API_URL=power2.vektalnodes.in:19138` — no scheme (→ `[unknown scheme]`), no path (→ hits `/`, gets 302), no `{discordId}` (→ would send everyone to one fixed URL). **Correct value:**
+     ```
+     JN_COINS_API_URL=http://power2.vektalnodes.in:19138/api/v1/economy/1537698724992647198/users/{discordId}/balance
+     ```
    - **Owner should still set the value correctly:** `JN_COINS_API_URL=http://power2.vektalnodes.in:19138/api/v1/economy/<guild>/users/{discordId}/balance`. Confirmed: `http://…:19138` → 200, `https://…:19138` → 000 (no TLS on that port, so `https://` would fail with `ERR_SSL_WRONG_VERSION_NUMBER`).
+   - `configProblem()` now names every defect in one log line (which of scheme/path/placeholder is wrong) and the call is refused with `reason: "bad-coins-url"` rather than fired at a fixed URL. Timeout raised 6s → 15s (the balance path measured 4.3s, so 6s aborted real requests).
    - **How it was pinned down:** `fetch failed` is undici's generic message; `e.cause` holds the reason. The old log printed only `e.message`, which is why this was invisible. `describeFetchError()` + `safeTarget()` now log cause + code + `scheme://host:port` (path omitted so no Discord id reaches the log). Reproduced byte-for-byte in `.qa/scheme-test.mjs` before and after the fix.
    - The bot is **healthy and not the problem**: `/health` → 200 `{"bot_online":true,"guilds":2,"ok":true}`. **Nothing to add or remove in the Crownix bot config.**
    - Secondary issue: the TLS certificate covers only `jacknetwork.in` and `www.jacknetwork.in` — **`store.jacknetwork.in` is not a SAN**. Issue a cert including it (wildcard `*.jacknetwork.in`) or put Cloudflare in front. The session cookie is `Secure`, so it will not travel over plain HTTP; the store genuinely needs working HTTPS there.
