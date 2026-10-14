@@ -22,10 +22,9 @@ export const site = {
   },
   storeHero: {
     kicker: "Jack Network Store",
-    headlineTop: "Spend your",
-    headlineBottom: "coins.",
-    description:
-      "One Discord login for the whole network. Put your balance to work on ranks and upgrades, or top it up and be ready for the next fight.",
+    headlineTop: "Your Game.",
+    headlineBottom: "Your Legacy.",
+    description: "Exclusive upgrades and rewards, to take your run further.",
   },
   network: {
     kicker: "The network",

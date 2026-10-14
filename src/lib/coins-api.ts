@@ -22,24 +22,21 @@ export function withScheme(raw: string): string {
 }
 
 /**
- * A template without {discordId} would send every caller to one fixed URL,
- * silently showing someone else's balance. Log it once per process.
+ * A template without {discordId} would send every caller to one fixed URL —
+ * showing a single player's balance to every visitor. Refuse the call instead
+ * of guessing the path (rule 4: never invent facts).
  */
-let warnedPlaceholder = false;
-function checkPlaceholder(): void {
-  if (warnedPlaceholder) return;
-  const t = process.env.JN_COINS_API_URL ?? "";
-  if (t && !t.includes("{discordId}") && !t.includes("{uuid}")) {
-    warnedPlaceholder = true;
-    console.error(
-      "[coins] JN_COINS_API_URL has no {discordId} placeholder — every request hits the same URL. " +
-        "Expected .../users/{discordId}/balance",
-    );
-  }
+export function hasIdPlaceholder(t: string): boolean {
+  return t.includes("{discordId}") || t.includes("{uuid}");
+}
+
+/** The adjust template if explicitly configured, else the balance template. */
+function configuredTemplate(adjust: boolean): string {
+  if (adjust && process.env.JN_COINS_ADJUST_URL) return process.env.JN_COINS_ADJUST_URL;
+  return process.env.JN_COINS_API_URL ?? "";
 }
 
 function balanceUrl(discordId: string, uuid = ""): string {
-  checkPlaceholder();
   return withScheme(process.env.JN_COINS_API_URL ?? "")
     .replaceAll("{discordId}", encodeURIComponent(discordId))
     .replaceAll("{uuid}", encodeURIComponent(uuid));
@@ -53,6 +50,14 @@ function adjustUrl(discordId: string): string {
 }
 
 const KEYS = ["coins", "balance", "amount", "points", "value"];
+
+/**
+ * The bot answers /health in ~0.3s but the balance path was measured at
+ * 4.3s under load; 6s aborted real requests. Keep this well above the worst
+ * observed latency — the route is server-side, so waiting costs nothing the
+ * user can see beyond a slower header refresh.
+ */
+const TIMEOUT_MS = 15_000;
 
 /**
  * Node's fetch reports only "fetch failed"; the real reason (ECONNREFUSED,
@@ -117,12 +122,20 @@ export type BalanceResult =
   | { ok: false; reason: string };
 
 export async function fetchBalance(discordId: string, uuid = ""): Promise<BalanceResult> {
+  const tmpl = configuredTemplate(false);
+  if (tmpl && !hasIdPlaceholder(tmpl)) {
+    console.error(
+      "[coins] JN_COINS_API_URL has no {discordId} placeholder — refusing to call a fixed URL, " +
+        "which would show one player's balance to everyone. Set .../users/{discordId}/balance",
+    );
+    return { ok: false, reason: "missing-discord-id" };
+  }
   const url = balanceUrl(discordId, uuid);
   try {
     const res = await fetch(url, {
       headers: headers(),
       cache: "no-store",
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     const text = await res.text();
     if (!res.ok) {
@@ -160,6 +173,15 @@ export async function adjustCoins(
   reason: string,
   idempotencyKey: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
+  // On adjust this matters more: a fixed URL would credit the wrong player.
+  const tmpl = configuredTemplate(true);
+  if (tmpl && !hasIdPlaceholder(tmpl)) {
+    console.error(
+      "[coins] coins template has no {discordId} placeholder — refusing to adjust, which would " +
+        "credit the wrong player's balance. Set .../users/{discordId}/adjust",
+    );
+    return { ok: false, reason: "missing-discord-id" };
+  }
   const url = adjustUrl(discordId);
   try {
     const res = await fetch(url, {
@@ -167,7 +189,7 @@ export async function adjustCoins(
       headers: headers(true),
       body: JSON.stringify({ amount, reason, idempotency_key: idempotencyKey }),
       cache: "no-store",
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!res.ok) {
       console.error(`[coins] adjust HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);

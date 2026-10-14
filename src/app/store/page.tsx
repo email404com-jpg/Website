@@ -18,10 +18,11 @@ export default function StoreHub() {
           {hero.kicker}
         </p>
         <h1 className="font-display jn-enter mt-5 text-[clamp(3.4rem,11vw,8.5rem)] leading-[0.86] font-black text-hero-ink" style={{ "--enter-delay": "80ms" } as React.CSSProperties}>
-          {hero.headlineTop}{" "}
+          {hero.headlineTop}
+          <br />
           <span className="text-accent">{hero.headlineBottom}</span>
         </h1>
-        <p className="jn-enter mt-6 max-w-xl text-base leading-relaxed text-fg-muted sm:text-lg" style={{ "--enter-delay": "160ms" } as React.CSSProperties}>
+        <p className="jn-enter mt-6 max-w-xl text-base leading-relaxed text-fg-subtle sm:text-lg" style={{ "--enter-delay": "160ms" } as React.CSSProperties}>
           {hero.description}
         </p>
 
