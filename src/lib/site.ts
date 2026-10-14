@@ -20,6 +20,13 @@ export const site = {
     description:
       "Jack Network runs practice PvP and survival on a single server. Same IP on Java and Bedrock — copy it, join, and play.",
   },
+  storeHero: {
+    kicker: "Jack Network Store",
+    headlineTop: "Spend your",
+    headlineBottom: "coins.",
+    description:
+      "One Discord login for the whole network. Put your balance to work on ranks and upgrades, or top it up and be ready for the next fight.",
+  },
   network: {
     kicker: "The network",
     statement: "Two ways to play. Zero friction to start.",

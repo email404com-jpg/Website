@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
+import { site } from "@/lib/site";
 import { store } from "@/lib/store";
 import { Reveal } from "@/components/reveal";
 import { CoinGlyph } from "@/components/store/coin-icon";
 
 export default function StoreHub() {
+  const hero = site.storeHero;
   return (
     <div className="jn-dark relative isolate overflow-hidden">
       <div aria-hidden="true" className="absolute inset-0 -z-10" style={{ background: "radial-gradient(ellipse 60% 50% at 80% 0%, rgb(215 25 63 / 0.22), transparent 70%)" }} />
@@ -13,14 +15,14 @@ export default function StoreHub() {
       <div className="relative mx-auto max-w-7xl px-4 pt-14 pb-24 sm:px-8 sm:pt-20 sm:pb-32">
         <p className="jn-eyebrow jn-enter flex items-center gap-3 text-accent-ink">
           <span aria-hidden="true" className="h-px w-8 bg-accent" />
-          Jack Network Store
+          {hero.kicker}
         </p>
         <h1 className="font-display jn-enter mt-5 text-[clamp(3.4rem,11vw,8.5rem)] leading-[0.86] font-black text-hero-ink" style={{ "--enter-delay": "80ms" } as React.CSSProperties}>
-          Choose your <span className="text-accent">battlefield</span>
+          {hero.headlineTop}{" "}
+          <span className="text-accent">{hero.headlineBottom}</span>
         </h1>
         <p className="jn-enter mt-6 max-w-xl text-base leading-relaxed text-fg-muted sm:text-lg" style={{ "--enter-delay": "160ms" } as React.CSSProperties}>
-          One Discord login for the whole network. Pick a mode to spend coins
-          on ranks and upgrades, or top up your balance.
+          {hero.description}
         </p>
 
         <ul className="mt-14 grid gap-4 lg:grid-cols-3">
