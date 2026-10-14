@@ -83,7 +83,13 @@ export async function fetchBalance(discordId: string, uuid = ""): Promise<Balanc
     }
     const coins = extractBalance(body);
     if (coins === null) {
-      console.error(`[coins] no balance field in: ${text.slice(0, 300)}`);
+      // Log only the shape (keys), not values: enough to tighten extractBalance
+      // from one server log line without dumping a user's economy record.
+      const keys =
+        body && typeof body === "object"
+          ? Object.keys(body as Record<string, unknown>).join(",")
+          : typeof body;
+      console.error(`[coins] no balance field (top-level keys: ${keys}): ${text.slice(0, 300)}`);
       return { ok: false, reason: "no-balance-field" };
     }
     return { ok: true, coins };

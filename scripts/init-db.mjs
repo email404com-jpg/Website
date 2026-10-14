@@ -86,6 +86,7 @@ const STATEMENTS = [
     "seq" INTEGER NOT NULL DEFAULT 0,
     "day" TEXT NOT NULL,
     "dayCoins" INTEGER NOT NULL DEFAULT 0,
+    "version" INTEGER NOT NULL DEFAULT 0,
     CONSTRAINT "AfkState_userId_fkey" FOREIGN KEY ("userId")
       REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
   )`,
@@ -100,6 +101,26 @@ const STATEMENTS = [
     ON "VerificationToken"("identifier", "token")`,
 ];
 
+/**
+ * CREATE TABLE IF NOT EXISTS never adds a column to a table that already
+ * exists, so every new column also needs this guarded ALTER. Check
+ * PRAGMA table_info first: SQLite rejects a duplicate column.
+ */
+const ALTERS = [
+  { table: "AfkState", column: "version", ddl: `ALTER TABLE "AfkState" ADD COLUMN "version" INTEGER NOT NULL DEFAULT 0` },
+];
+
+async function applyAlters(db) {
+  for (const { table, column, ddl } of ALTERS) {
+    const info = await db.execute({ sql: `PRAGMA table_info("${table}")`, args: [] });
+    const cols = info.rows.map((r) => String(r.name));
+    if (cols.length && !cols.includes(column)) {
+      await db.execute({ sql: ddl, args: [] });
+      console.log(`[init-db] altered: ${table} +${column}`);
+    }
+  }
+}
+
 async function main() {
   const file = dbFilePath();
   mkdirSync(dirname(file), { recursive: true });
@@ -107,6 +128,7 @@ async function main() {
   const db = createClient({ url: `file:${file}` });
   try {
     await db.batch(STATEMENTS.map((sql) => ({ sql, args: [] })));
+    await applyAlters(db);
     const tables = await db.execute(
       `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('User','Account','Session','VerificationToken','MinecraftLink','AfkState') ORDER BY name`,
     );

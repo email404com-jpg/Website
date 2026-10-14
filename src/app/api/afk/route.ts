@@ -43,7 +43,10 @@ export async function GET() {
 export async function DELETE() {
   const c = await ctx();
   if (!c) return NextResponse.json({ state: "signed-out" }, { status: 401 });
-  await prisma.afkState.updateMany({ where: { userId: c.userId }, data: { lastBeat: new Date(0) } });
+  await prisma.afkState.updateMany({
+    where: { userId: c.userId },
+    data: { lastBeat: new Date(0), version: { increment: 1 } },
+  });
   return NextResponse.json({ state: "idle" });
 }
 
@@ -71,7 +74,8 @@ export async function POST(req: Request) {
       });
       return NextResponse.json({ state: "running", ...snapshot(created) });
     } catch {
-      return NextResponse.json({ state: "running", ...snapshot(null) });
+      const fresh = await prisma.afkState.findUnique({ where: { userId: c.userId } });
+      return NextResponse.json({ state: "running", ...snapshot(fresh) });
     }
   }
 
@@ -92,8 +96,8 @@ export async function POST(req: Request) {
 
   if (dayCoins >= CAP) {
     await prisma.afkState.updateMany({
-      where: { userId: c.userId, lastBeat: row.lastBeat },
-      data: { tabId, lastBeat: now, carry: 0, day, dayCoins },
+      where: { userId: c.userId, version: row.version },
+      data: { tabId, lastBeat: now, carry: 0, day, dayCoins, version: { increment: 1 } },
     });
     return NextResponse.json({ state: "capped", ...snapshot({ carry: 0, day, dayCoins }) });
   }
@@ -117,12 +121,16 @@ export async function POST(req: Request) {
     }
   }
 
-  // compare-and-set so two simultaneous beats cannot both claim the same minutes
+  // Compare-and-set on the integer version so two simultaneous beats cannot
+  // both claim the same minutes. (A DateTime CAS matches 0 rows on libsql.)
   const upd = await prisma.afkState.updateMany({
-    where: { userId: c.userId, lastBeat: row.lastBeat },
-    data: { tabId, lastBeat: now, carry, seq, day, dayCoins },
+    where: { userId: c.userId, version: row.version },
+    data: { tabId, lastBeat: now, carry, seq, day, dayCoins, version: { increment: 1 } },
   });
-  if (upd.count === 0) return NextResponse.json({ state: "running", ...snapshot(row) });
+  if (upd.count === 0) {
+    const fresh = await prisma.afkState.findUnique({ where: { userId: c.userId } });
+    return NextResponse.json({ state: "running", ...snapshot(fresh) });
+  }
 
   return NextResponse.json({
     state: failed ? "error" : "running",

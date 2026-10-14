@@ -136,7 +136,7 @@ export function AfkClient() {
             ) : null}
             <svg viewBox="0 0 100 100" className="absolute inset-0 -rotate-90" aria-hidden="true">
               <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="3" className="text-line-strong" />
-              <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(pct / 100) * 289} 289`} className="text-accent transition-[stroke-dasharray] duration-1000 ease-linear" />
+              <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap={pct > 0 ? "round" : "butt"} strokeDasharray={`${(pct / 100) * 289} 289`} className="text-accent transition-[stroke-dasharray] duration-1000 ease-linear" />
             </svg>
             <CoinGlyph className={`h-14 w-14 text-accent-ink ${active ? "jn-float" : "opacity-60"}`} />
           </div>
@@ -149,9 +149,15 @@ export function AfkClient() {
               +{rate} <span className="text-accent">coins</span>
               <span className="text-2xl font-extrabold text-fg-subtle"> / minute</span>
             </p>
-            <p className="mt-3 font-mono text-sm text-fg-muted tabular-nums">
-              Next coins in {String(Math.max(0, 59 - sec)).padStart(2, "0")}s
-            </p>
+            {running ? (
+              <p className="mt-3 font-mono text-sm text-fg-muted tabular-nums">
+                Next coins in {String(Math.max(0, 59 - sec)).padStart(2, "0")}s
+              </p>
+            ) : (
+              <p className="mt-3 font-mono text-sm text-fg-subtle">
+                Press start to earn
+              </p>
+            )}
             <div className="mt-6">
               {running ? (
                 <button type="button" onClick={stop} className="jn-btn jn-btn-ghost">Stop</button>

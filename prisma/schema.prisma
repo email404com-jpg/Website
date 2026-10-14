@@ -78,6 +78,9 @@ model AfkState {
   seq      Int      @default(0)
   day      String
   dayCoins Int      @default(0)
+  /// Optimistic lock for compare-and-set. A DateTime cannot be used for this:
+  /// the libsql adapter matches 0 rows when a read-back DateTime is written back.
+  version  Int      @default(0)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
