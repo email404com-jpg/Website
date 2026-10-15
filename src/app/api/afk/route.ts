@@ -115,6 +115,7 @@ export async function POST(req: Request) {
       seq = row.seq + 1;
       carry -= minutes * 60;
       dayCoins += award;
+      console.log(`[afk] awarded ${award} coins (seq ${seq}, day ${dayCoins}/${CAP})`);
     } else {
       failed = r.reason;
       award = 0;

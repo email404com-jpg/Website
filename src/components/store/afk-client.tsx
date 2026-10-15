@@ -50,7 +50,11 @@ export function AfkClient() {
       setRunning(false);
       setNote("You hit today's AFK limit. It resets at 00:00 UTC.");
     } else if (d.state === "error") {
-      setNote("Could not credit coins just now. We will retry on the next check-in.");
+      setNote(
+        d.reason
+          ? `Could not credit coins just now (${d.reason}). We will retry on the next check-in.`
+          : "Could not credit coins just now. We will retry on the next check-in.",
+      );
     } else if (d.state === "signed-out") {
       setRunning(false);
       setNote("Your session expired. Sign in again.");
