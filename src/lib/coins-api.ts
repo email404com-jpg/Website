@@ -171,6 +171,75 @@ export type BalanceResult =
   | { ok: true; coins: number }
   | { ok: false; reason: string };
 
+/**
+ * The bot runs on the SAME host as this app — power2.vektalnodes.in is the
+ * site's own public IP. Reaching a machine over its own public address needs
+ * hairpin NAT, which this host does not do, so the TCP connect times out
+ * ([UND_ERR_CONNECT_TIMEOUT]) even though the bot answers fine from outside.
+ * JN_COINS_HOST_OVERRIDE names a reachable address (127.0.0.1:19138, or the
+ * docker bridge if the app is containerised) to fall back to.
+ *
+ * Only failures that mean "the connection was never established" count —
+ * a reset after the request went out could mean the bot already applied it,
+ * and retrying a non-idempotent adjust would double-credit.
+ */
+export function isConnectError(e: unknown): boolean {
+  const cause = (e as { cause?: unknown })?.cause as NodeJS.ErrnoException | undefined;
+  switch (cause?.code ?? "") {
+    case "UND_ERR_CONNECT_TIMEOUT":
+    case "ECONNREFUSED":
+    case "ETIMEDOUT":
+    case "ENOTFOUND":
+    case "EHOSTUNREACH":
+    case "ENETUNREACH":
+      return true;
+    default:
+      return false;
+  }
+}
+
+/** Swap only host:port, keeping scheme, path and query intact. */
+export function swapHost(url: string, host: string): string {
+  try {
+    const u = new URL(url);
+    u.host = host.replace(/^[a-z][a-z0-9+\-.]*:\/\//i, "").replace(/\/+$/, "");
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+export async function requestWithFallback(
+  url: string,
+  init: Omit<RequestInit, "signal" | "cache">,
+): Promise<Response> {
+  const urls = [url];
+  const alt = (process.env.JN_COINS_HOST_OVERRIDE ?? "").trim();
+  if (alt) {
+    const swapped = swapHost(url, alt);
+    if (swapped !== url) urls.push(swapped);
+  }
+  let last: unknown;
+  for (let i = 0; i < urls.length; i++) {
+    const target = urls[i];
+    try {
+      return await fetch(target, {
+        ...init,
+        cache: "no-store",
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+    } catch (e) {
+      last = e;
+      const next = urls[i + 1];
+      if (!next || !isConnectError(e)) throw e;
+      console.error(
+        `[coins] ${safeTarget(target)} unreachable (${describeFetchError(e)}); retrying via ${safeTarget(next)}`,
+      );
+    }
+  }
+  throw last;
+}
+
 export async function fetchBalance(discordId: string, uuid = ""): Promise<BalanceResult> {
   const tmpl = configuredTemplate(false);
   const bad = configProblem(tmpl);
@@ -180,11 +249,7 @@ export async function fetchBalance(discordId: string, uuid = ""): Promise<Balanc
   }
   const url = balanceUrl(discordId, uuid);
   try {
-    const res = await fetch(url, {
-      headers: headers(),
-      cache: "no-store",
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
+    const res = await requestWithFallback(url, { headers: headers() });
     const text = await res.text();
     if (!res.ok) {
       console.error(`[coins] balance HTTP ${res.status}: ${text.slice(0, 200)}`);
@@ -231,12 +296,10 @@ export async function adjustCoins(
   }
   const url = adjustUrl(discordId);
   try {
-    const res = await fetch(url, {
+    const res = await requestWithFallback(url, {
       method: "POST",
       headers: headers(true),
       body: JSON.stringify({ amount, reason, idempotency_key: idempotencyKey }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!res.ok) {
       console.error(`[coins] adjust HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
