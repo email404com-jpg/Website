@@ -215,10 +215,11 @@ export function swapHost(url: string, host: string): string {
 
 /**
  * The addresses worth trying before discovery and the configured host:
- *   1. 127.0.0.1:<port> — same network namespace (instant either way).
+ *   1. The discovered host, once one is proven — after that no probing.
+ *   2. 127.0.0.1:<port> — same network namespace (instant either way).
  *      Only when the URL carries an explicit non-web port; 80/443 are
  *      skipped so our own nginx is never dialled.
- *   2. JN_COINS_HOST_OVERRIDE — an owner-provided known-good address.
+ *   3. JN_COINS_HOST_OVERRIDE — an owner-provided known-good address.
  * The configured host itself is handled by requestWithFallback (it is last,
  * and may be replaced by a discovered one).
  */
@@ -227,12 +228,14 @@ export function fastCandidateUrls(url: string): string[] {
   const push = (u: string) => {
     if (u && !out.includes(u)) out.push(u);
   };
+  let port = "";
   try {
-    const p = new URL(url).port;
-    if (p && p !== "80" && p !== "443") push(swapHost(url, `127.0.0.1:${p}`));
+    port = new URL(url).port;
   } catch {
     // unparseable — the primary attempt reports the real error
   }
+  if (port && discovered?.port === port) push(swapHost(url, discovered.host));
+  if (port && port !== "80" && port !== "443") push(swapHost(url, `127.0.0.1:${port}`));
   const alt = (process.env.JN_COINS_HOST_OVERRIDE ?? "").trim();
   if (alt) push(swapHost(url, alt));
   return out.filter((u) => u !== url);
@@ -347,12 +350,22 @@ export async function requestWithFallback(
   url: string,
   init: Omit<RequestInit, "signal" | "cache">,
 ): Promise<Response> {
+  let port = "";
+  try {
+    port = new URL(withScheme(url)).port;
+  } catch {
+    // unparseable — the primary attempt reports the real error
+  }
   const attempt = async (target: string): Promise<Response | null> => {
     try {
       return await doFetch(target, init);
     } catch (e) {
       if (!isConnectError(e)) throw e;
-      console.error(`[coins] ${safeTarget(target)} unreachable (${describeFetchError(e)})`);
+      // The 127.0.0.1 probe is expected to fail in the separate-container
+      // topology — silent. Anything else failing is worth one line.
+      if (!/^https?:\/\/127\.0\.0\.1(?::|$)/.test(target)) {
+        console.error(`[coins] ${safeTarget(target)} unreachable (${describeFetchError(e)})`);
+      }
       return null;
     }
   };
@@ -361,11 +374,14 @@ export async function requestWithFallback(
   for (const target of fast) {
     const res = await attempt(target);
     if (res) return res;
+    if (discovered && port === discovered.port && target === swapHost(url, discovered.host)) {
+      discovered = null; // dropped — re-scanned after the pause
+      rescanAfter = Date.now() + RESCAN_AFTER_MS;
+    }
   }
 
   // Discovery before burning the configured host's hairpin timeout.
   try {
-    const port = new URL(withScheme(url)).port;
     if (discoveryEnabled() && port) {
       const host = await discoverLocalBot(port);
       if (host) {
@@ -387,43 +403,89 @@ export async function requestWithFallback(
   return doFetch(url, init);
 }
 
-export async function fetchBalance(discordId: string, uuid = ""): Promise<BalanceResult> {
-  const tmpl = configuredTemplate(false);
-  const bad = configProblem(tmpl);
-  if (bad) {
-    console.error(`[coins] refusing balance call: ${bad}`);
-    return { ok: false, reason: "bad-coins-url" };
+// Balance cache: every visitor's header polls every second, the bot allows
+// 120 reads/min for the shared token. Cache each user's last good balance
+// for 2s and collapse concurrent identical reads into one upstream call.
+const BALANCE_CACHE_MS = 2_000;
+const BALANCE_STALE_MS = 5_000; // re-check window while upstream is rate limiting
+const BALANCE_CACHE_MAX = 2_000;
+type BalanceCacheEntry = { exp: number; coins: number };
+const balanceCache = new Map<string, BalanceCacheEntry>();
+const balanceInflight = new Map<string, Promise<BalanceResult>>();
+
+export function clearBalanceCache(discordId?: string): void {
+  if (!discordId) {
+    balanceCache.clear();
+    return;
   }
-  const url = balanceUrl(discordId, uuid);
-  try {
-    const res = await requestWithFallback(url, { headers: headers() });
-    const text = await res.text();
-    if (!res.ok) {
-      console.error(`[coins] balance HTTP ${res.status}: ${text.slice(0, 200)}`);
-      return { ok: false, reason: `api-http-${res.status}` };
+  for (const key of [...balanceCache.keys()]) {
+    if (key.startsWith(`${discordId}|`)) balanceCache.delete(key);
+  }
+}
+
+export async function fetchBalance(discordId: string, uuid = ""): Promise<BalanceResult> {
+  const key = `${discordId}|${uuid}`;
+  const prev = balanceCache.get(key);
+  if (prev && prev.exp > Date.now()) return { ok: true, coins: prev.coins };
+
+  const inflight = balanceInflight.get(key);
+  if (inflight) return inflight;
+
+  const run = async (): Promise<BalanceResult> => {
+    const tmpl = configuredTemplate(false);
+    const bad = configProblem(tmpl);
+    if (bad) {
+      console.error(`[coins] refusing balance call: ${bad}`);
+      return { ok: false, reason: "bad-coins-url" };
     }
-    let body: unknown;
+    const url = balanceUrl(discordId, uuid);
     try {
-      body = JSON.parse(text);
-    } catch {
-      console.error(`[coins] balance not JSON: ${text.slice(0, 200)}`);
-      return { ok: false, reason: "api-not-json" };
+      const res = await requestWithFallback(url, { headers: headers() });
+      const text = await res.text();
+      if (!res.ok) {
+        // Upstream rate limit: keep serving the last known value instead of
+        // flashing "Balance unavailable" at every visitor.
+        if (res.status === 429 && prev) {
+          console.log("[coins] upstream rate limited; serving last known balance");
+          balanceCache.set(key, { exp: Date.now() + BALANCE_STALE_MS, coins: prev.coins });
+          return { ok: true, coins: prev.coins };
+        }
+        console.error(`[coins] balance HTTP ${res.status}: ${text.slice(0, 200)}`);
+        return { ok: false, reason: `api-http-${res.status}` };
+      }
+      let body: unknown;
+      try {
+        body = JSON.parse(text);
+      } catch {
+        console.error(`[coins] balance not JSON: ${text.slice(0, 200)}`);
+        return { ok: false, reason: "api-not-json" };
+      }
+      const coins = extractBalance(body);
+      if (coins === null) {
+        // Log only the shape (keys), not values: enough to tighten extractBalance
+        // from one server log line without dumping a user's economy record.
+        const keys =
+          body && typeof body === "object"
+            ? Object.keys(body as Record<string, unknown>).join(",")
+            : typeof body;
+        console.error(`[coins] no balance field (top-level keys: ${keys}): ${text.slice(0, 300)}`);
+        return { ok: false, reason: "no-balance-field" };
+      }
+      if (balanceCache.size > BALANCE_CACHE_MAX) balanceCache.clear();
+      balanceCache.set(key, { exp: Date.now() + BALANCE_CACHE_MS, coins });
+      return { ok: true, coins };
+    } catch (e) {
+      console.error(`[coins] balance request failed: ${describeFetchError(e)} -> ${safeTarget(url)}`);
+      return { ok: false, reason: "api-unreachable" };
     }
-    const coins = extractBalance(body);
-    if (coins === null) {
-      // Log only the shape (keys), not values: enough to tighten extractBalance
-      // from one server log line without dumping a user's economy record.
-      const keys =
-        body && typeof body === "object"
-          ? Object.keys(body as Record<string, unknown>).join(",")
-          : typeof body;
-      console.error(`[coins] no balance field (top-level keys: ${keys}): ${text.slice(0, 300)}`);
-      return { ok: false, reason: "no-balance-field" };
-    }
-    return { ok: true, coins };
-  } catch (e) {
-    console.error(`[coins] balance request failed: ${describeFetchError(e)} -> ${safeTarget(url)}`);
-    return { ok: false, reason: "api-unreachable" };
+  };
+
+  const p = run();
+  balanceInflight.set(key, p);
+  try {
+    return await p;
+  } finally {
+    balanceInflight.delete(key);
   }
 }
 
@@ -452,6 +514,7 @@ export async function adjustCoins(
       console.error(`[coins] adjust HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
       return { ok: false, reason: `api-http-${res.status}` };
     }
+    clearBalanceCache(discordId); // the balance just changed
     return { ok: true };
   } catch (e) {
     console.error(`[coins] adjust failed: ${describeFetchError(e)} -> ${safeTarget(url)}`);
