@@ -58,16 +58,19 @@ export function configProblem(raw: string): string | null {
  * Crownix documents the balance path as
  *   /api/v1/economy/<guild_id>/users/<user_id>/balance
  * The panel kept being set to bare host:port, which carries no path and no
- * placeholder. If JN_COINS_GUILD_ID is set, rebuild that documented path from
- * the host so host:port alone is enough. Only ever applied when the configured
- * value has no path at all — a half-built path is still refused.
+ * placeholder. Rebuild the documented path from the host so host:port alone
+ * is enough. Only ever applied when the configured value has no path at all
+ * — a half-built path is still refused, never guessed. The guild id defaults
+ * to Jack's guild (same value as .env.example) so a bare host:port plus an
+ * API key is a complete working config; JN_COINS_GUILD_ID overrides it.
  */
 const CROWNIX_BALANCE_PATH = "/api/v1/economy/{guildId}/users/{discordId}/balance";
+const DEFAULT_GUILD_ID = "1537698724992647198";
 
 export function resolveBalanceTemplate(): string {
   const raw = process.env.JN_COINS_API_URL ?? "";
   if (!raw || hasIdPlaceholder(raw)) return raw;
-  const guild = process.env.JN_COINS_GUILD_ID ?? "";
+  const guild = process.env.JN_COINS_GUILD_ID || DEFAULT_GUILD_ID;
   if (!guild) return raw;
   const base = withScheme(raw).replace(/\/+$/, "");
   let path: string;
@@ -174,10 +177,10 @@ export type BalanceResult =
 /**
  * The bot runs on the SAME host as this app — power2.vektalnodes.in is the
  * site's own public IP. Reaching a machine over its own public address needs
- * hairpin NAT, which this host does not do, so the TCP connect times out
+ * hairpin NAT, which this host does not do, so that connect times out
  * ([UND_ERR_CONNECT_TIMEOUT]) even though the bot answers fine from outside.
- * JN_COINS_HOST_OVERRIDE names a reachable address (127.0.0.1:19138, or the
- * docker bridge if the app is containerised) to fall back to.
+ * This is why candidateUrls() dials 127.0.0.1 first; this predicate decides
+ * whether a failed hop may advance to the next candidate at all.
  *
  * Only failures that mean "the connection was never established" count —
  * a reset after the request went out could mean the bot already applied it,
@@ -209,16 +212,39 @@ export function swapHost(url: string, host: string): string {
   }
 }
 
+/**
+ * Addresses to try, fastest first:
+ *   1. 127.0.0.1:<port> — the bot usually shares this machine, and the
+ *      configured host is usually the machine's OWN public address, which
+ *      cannot hairpin to itself (10s connect timeout). A localhost dial is
+ *      instant either way: it only runs when the URL carries an explicit
+ *      non-web port, and 80/443 are skipped so we never talk to our own nginx.
+ *   2. JN_COINS_HOST_OVERRIDE — an owner-provided known-good address.
+ *   3. The configured host itself — correct for a bot on another machine.
+ * Deduplicated, so a localhost config behaves exactly as before.
+ */
+export function candidateUrls(url: string): string[] {
+  const out: string[] = [];
+  const push = (u: string) => {
+    if (u && !out.includes(u)) out.push(u);
+  };
+  try {
+    const p = new URL(url).port;
+    if (p && p !== "80" && p !== "443") push(swapHost(url, `127.0.0.1:${p}`));
+  } catch {
+    // unparseable — the primary attempt below reports the real error
+  }
+  const alt = (process.env.JN_COINS_HOST_OVERRIDE ?? "").trim();
+  if (alt) push(swapHost(url, alt));
+  push(url);
+  return out;
+}
+
 export async function requestWithFallback(
   url: string,
   init: Omit<RequestInit, "signal" | "cache">,
 ): Promise<Response> {
-  const urls = [url];
-  const alt = (process.env.JN_COINS_HOST_OVERRIDE ?? "").trim();
-  if (alt) {
-    const swapped = swapHost(url, alt);
-    if (swapped !== url) urls.push(swapped);
-  }
+  const urls = candidateUrls(url);
   let last: unknown;
   for (let i = 0; i < urls.length; i++) {
     const target = urls[i];
