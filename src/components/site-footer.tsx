@@ -117,11 +117,9 @@ export function SiteFooter() {
       <div className="relative border-t border-line bg-background">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-xs text-fg-subtle sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <p>
-            © {site.copyrightYear} {site.name} — {site.domain}
+            © {site.copyrightYear} {site.name}. All rights reserved.
           </p>
           <p className="max-w-lg leading-relaxed sm:text-right">
-            Not an official Minecraft service. Not affiliated with Mojang or
-            Microsoft.{" "}
             <Link
               href="/credits"
               className="underline decoration-line-strong underline-offset-4 transition-colors hover:text-fg"

@@ -74,6 +74,13 @@ const sections = [
       "Questions about these terms can be raised in Discord through a support ticket.",
     ],
   },
+  {
+    title: "10. Minecraft & Trademark Disclaimer",
+    body: [
+      "Jack Network is an independently operated Minecraft server network created for the community. It is not affiliated with, endorsed by, sponsored by, or officially connected to Mojang Studios or Microsoft.",
+      "Minecraft and all related trademarks, names, and assets remain the property of their respective owners. Jack Network does not claim ownership of these trademarks or imply any official partnership with their owners.",
+    ],
+  },
 ];
 
 export default function TermsPage() {
