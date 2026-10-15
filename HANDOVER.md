@@ -219,6 +219,8 @@ Owner said "Leave it, store is working" — so DNS/hosting is evidently already 
 **Not built:** Minecraft plugin `/link`; rank purchase flow; payment provider; leaderboard; anything not listed here.
 **Cosmetic fixes this session [verified]:** the AFK ring drew a stray crimson dot at 0% (round line-cap on a zero-length dash) — fixed; the page said "Next coins in 59s" while idle — now "Press start to earn".
 
+**404 page — simplified this session [verified].** `src/app/not-found.tsx` lost `SiteHeader`/`SiteFooter` and the "Error" kicker; it is now just `404`, one line, and a `jn-btn jn-btn-primary` "Go home". This also fixes a real bug: the file is shared by **both** hosts, so a bad URL on `store.jacknetwork.in` used to render the *marketing* header. Verified on main and store hosts at 1440 and 390: no header/footer, no horizontal overflow, button 48px tall (≥44px tap target). "Go home" links to `/`, which the proxy maps to the correct home per host.
+
 ---
 
 ## 9. Known bugs, limitations, exact next steps
@@ -231,10 +233,13 @@ Owner said "Leave it, store is working" — so DNS/hosting is evidently already 
      http://power2.vektalnodes.in:19138/api/v1/economy/<guild>/users/<discord_id>/balance
    ```
    - **Fix shipped:** `withScheme()` in `coins-api.ts` prepends `http://` when a template has no `scheme://`, so this config mistake can no longer break the store. `checkPlaceholder()` additionally logs once if the template contains neither `{discordId}` nor `{uuid}` — without `{discordId}` every caller would be sent to one fixed URL and see someone else's balance.
-   - **The owner's live value was read and it is wrong three ways:** `JN_COINS_API_URL=power2.vektalnodes.in:19138` — no scheme (→ `[unknown scheme]`), no path (→ hits `/`, gets 302), no `{discordId}` (→ would send everyone to one fixed URL). **Correct value:**
-     ```
-     JN_COINS_API_URL=http://power2.vektalnodes.in:19138/api/v1/economy/1537698724992647198/users/{discordId}/balance
-     ```
+   - **The owner's live value was read and it is wrong three ways:** `JN_COINS_API_URL=power2.vektalnodes.in:19138` — no scheme (→ `[unknown scheme]`), no path (→ hits `/`, gets 302), no `{discordId}` (→ would send everyone to one fixed URL). **Two ways to fix it, either works:**
+     - *Simplest:* leave `JN_COINS_API_URL` as the bare host:port and add `JN_COINS_GUILD_ID=1537698724992647198`. `resolveBalanceTemplate()` rebuilds the documented Crownix path `/api/v1/economy/<guild>/users/{discordId}/balance` from the host. Only ever applied when the configured value has **no path at all** — a half-built path is still refused, never guessed.
+     - *Or* set the full value:
+       ```
+       JN_COINS_API_URL=http://power2.vektalnodes.in:19138/api/v1/economy/1537698724992647198/users/{discordId}/balance
+       ```
+   - Port confirmed: **19138 over http** (verified `/api/v1/health` → 200, `/api/v1/economy/<guild>/users/<id>/balance` → 401 with no key, i.e. path valid). The Crownix docs mention `:25569` and `https://`, but **25569 does not respond at all** on this host and 19138 has no TLS — so `https://` fails with `ERR_SSL_WRONG_VERSION_NUMBER`.
    - **Owner should still set the value correctly:** `JN_COINS_API_URL=http://power2.vektalnodes.in:19138/api/v1/economy/<guild>/users/{discordId}/balance`. Confirmed: `http://…:19138` → 200, `https://…:19138` → 000 (no TLS on that port, so `https://` would fail with `ERR_SSL_WRONG_VERSION_NUMBER`).
    - `configProblem()` now names every defect in one log line (which of scheme/path/placeholder is wrong) and the call is refused with `reason: "bad-coins-url"` rather than fired at a fixed URL. Timeout raised 6s → 15s (the balance path measured 4.3s, so 6s aborted real requests).
    - **How it was pinned down:** `fetch failed` is undici's generic message; `e.cause` holds the reason. The old log printed only `e.message`, which is why this was invisible. `describeFetchError()` + `safeTarget()` now log cause + code + `scheme://host:port` (path omitted so no Discord id reaches the log). Reproduced byte-for-byte in `.qa/scheme-test.mjs` before and after the fix.

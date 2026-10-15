@@ -54,14 +54,40 @@ export function configProblem(raw: string): string | null {
   );
 }
 
+/**
+ * Crownix documents the balance path as
+ *   /api/v1/economy/<guild_id>/users/<user_id>/balance
+ * The panel kept being set to bare host:port, which carries no path and no
+ * placeholder. If JN_COINS_GUILD_ID is set, rebuild that documented path from
+ * the host so host:port alone is enough. Only ever applied when the configured
+ * value has no path at all — a half-built path is still refused.
+ */
+const CROWNIX_BALANCE_PATH = "/api/v1/economy/{guildId}/users/{discordId}/balance";
+
+export function resolveBalanceTemplate(): string {
+  const raw = process.env.JN_COINS_API_URL ?? "";
+  if (!raw || hasIdPlaceholder(raw)) return raw;
+  const guild = process.env.JN_COINS_GUILD_ID ?? "";
+  if (!guild) return raw;
+  const base = withScheme(raw).replace(/\/+$/, "");
+  let path: string;
+  try {
+    path = new URL(base).pathname;
+  } catch {
+    return raw;
+  }
+  if (path !== "/" && path !== "") return raw;
+  return `${base}${CROWNIX_BALANCE_PATH.replace("{guildId}", encodeURIComponent(guild))}`;
+}
+
 /** The adjust template if explicitly configured, else the balance template. */
 function configuredTemplate(adjust: boolean): string {
   if (adjust && process.env.JN_COINS_ADJUST_URL) return process.env.JN_COINS_ADJUST_URL;
-  return process.env.JN_COINS_API_URL ?? "";
+  return resolveBalanceTemplate();
 }
 
 function balanceUrl(discordId: string, uuid = ""): string {
-  return withScheme(process.env.JN_COINS_API_URL ?? "")
+  return withScheme(resolveBalanceTemplate())
     .replaceAll("{discordId}", encodeURIComponent(discordId))
     .replaceAll("{uuid}", encodeURIComponent(uuid));
 }
