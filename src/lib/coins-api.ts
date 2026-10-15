@@ -1,4 +1,5 @@
 /** Server-side client for the coins economy API (balance + adjust). */
+import os from "node:os";
 
 export function coinsConfigured(): boolean {
   return Boolean(process.env.JN_COINS_API_URL);
@@ -213,17 +214,15 @@ export function swapHost(url: string, host: string): string {
 }
 
 /**
- * Addresses to try, fastest first:
- *   1. 127.0.0.1:<port> — the bot usually shares this machine, and the
- *      configured host is usually the machine's OWN public address, which
- *      cannot hairpin to itself (10s connect timeout). A localhost dial is
- *      instant either way: it only runs when the URL carries an explicit
- *      non-web port, and 80/443 are skipped so we never talk to our own nginx.
+ * The addresses worth trying before discovery and the configured host:
+ *   1. 127.0.0.1:<port> — same network namespace (instant either way).
+ *      Only when the URL carries an explicit non-web port; 80/443 are
+ *      skipped so our own nginx is never dialled.
  *   2. JN_COINS_HOST_OVERRIDE — an owner-provided known-good address.
- *   3. The configured host itself — correct for a bot on another machine.
- * Deduplicated, so a localhost config behaves exactly as before.
+ * The configured host itself is handled by requestWithFallback (it is last,
+ * and may be replaced by a discovered one).
  */
-export function candidateUrls(url: string): string[] {
+export function fastCandidateUrls(url: string): string[] {
   const out: string[] = [];
   const push = (u: string) => {
     if (u && !out.includes(u)) out.push(u);
@@ -232,38 +231,160 @@ export function candidateUrls(url: string): string[] {
     const p = new URL(url).port;
     if (p && p !== "80" && p !== "443") push(swapHost(url, `127.0.0.1:${p}`));
   } catch {
-    // unparseable — the primary attempt below reports the real error
+    // unparseable — the primary attempt reports the real error
   }
   const alt = (process.env.JN_COINS_HOST_OVERRIDE ?? "").trim();
   if (alt) push(swapHost(url, alt));
-  push(url);
+  return out.filter((u) => u !== url);
+}
+
+// ---------------------------------------------------------------------------
+// Local discovery. The bot binds 0.0.0.0:<port> (Flask on this machine) but
+// NOT on this process's localhost (separate container), and its public IP
+// cannot hairpin back — so when the fast candidates fail, sweep this
+// machine's own network for the economy API: gateways first (bot running on
+// the host), then the local subnets (bot in a sibling container). A target is
+// only trusted after GET /api/v1/health names `crownix-economy-api`, so the
+// API key is never sent to anything else. The winner is cached for the life
+// of the process; a dead cache entry is dropped and re-scanned after a pause.
+// JN_COINS_DISCOVER=off disables the sweep entirely.
+
+const PROBE_TIMEOUT_MS = 450;
+const PROBE_BATCH = 128;
+const RESCAN_AFTER_MS = 60_000;
+
+let discovered: { port: string; host: string } | null = null;
+let scanInflight: Promise<string | null> | null = null;
+let rescanAfter = 0;
+
+function discoveryEnabled(): boolean {
+  return !["off", "0", "false", "no"].includes((process.env.JN_COINS_DISCOVER ?? "").toLowerCase());
+}
+
+/** Is this `host:port` the CrowniX economy API? (health endpoint needs no auth) */
+async function probeEconomy(target: string): Promise<boolean> {
+  try {
+    const r = await fetch(`http://${target}/api/v1/health`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+    });
+    if (!r.ok) return false;
+    const j: unknown = await r.json();
+    return (j as { service?: unknown } | null)?.service === "crownix-economy-api";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Probe targets for this machine: docker/host gateways first, then each
+ * private IPv4 interface's own /24 (and, on a /16, the network's base /24 —
+ * where sibling containers usually land). `targets` overrides the computed
+ * list (tests, or a pinned set).
+ */
+export function localProbeTargets(port: string): string[] {
+  const gateways = new Set(["172.17.0.1", "172.18.0.1", "host.docker.internal"]);
+  const sweeps = new Set<string>();
+  for (const list of Object.values(os.networkInterfaces())) {
+    for (const ni of list ?? []) {
+      if (ni.family !== "IPv4" || ni.internal) continue;
+      const o = ni.address.split(".").map(Number);
+      if (o[0] !== 10 && o[0] !== 172 && o[0] !== 192) continue;
+      const prefix = Number(ni.cidr?.split("/")[1] ?? 24);
+      gateways.add(prefix >= 16 ? `${o[0]}.${o[1]}.0.1` : `${o[0]}.${o[1]}.${o[2]}.1`);
+      sweeps.add(`${o[0]}.${o[1]}.${o[2]}.`);
+      if (prefix >= 16 && o[2] !== 0) sweeps.add(`${o[0]}.${o[1]}.0.`);
+    }
+  }
+  const out: string[] = [];
+  const push = (host: string) => {
+    const t = `${host}:${port}`;
+    if (!out.includes(t)) out.push(t);
+  };
+  for (const g of gateways) push(g);
+  for (const s of sweeps) for (let i = 1; i <= 254; i++) push(`${s}${i}`);
   return out;
+}
+
+export async function discoverLocalBot(port: string, targets?: string[]): Promise<string | null> {
+  if (discovered?.port === port) return discovered.host;
+  if (!targets && Date.now() < rescanAfter) return null;
+  if (scanInflight) {
+    await scanInflight.catch(() => null);
+    return discovered?.port === port ? discovered.host : null;
+  }
+  scanInflight = scanForBot(port, targets);
+  try {
+    return await scanInflight;
+  } finally {
+    scanInflight = null;
+  }
+}
+
+async function scanForBot(port: string, targets?: string[]): Promise<string | null> {
+  const list = targets ?? localProbeTargets(port);
+  for (let i = 0; i < list.length; i += PROBE_BATCH) {
+    const hits = await Promise.all(
+      list.slice(i, i + PROBE_BATCH).map(async (t) => ((await probeEconomy(t)) ? t : null)),
+    );
+    const found = hits.find(Boolean);
+    if (found) {
+      discovered = { port, host: found };
+      console.log(`[coins] discovered bot at ${found} (economy /health ok)`);
+      return found;
+    }
+  }
+  rescanAfter = Date.now() + RESCAN_AFTER_MS;
+  console.log(`[coins] local discovery found no economy API on :${port} (${list.length} addrs probed); using the configured host`);
+  return null;
+}
+
+async function doFetch(target: string, init: Omit<RequestInit, "signal" | "cache">): Promise<Response> {
+  return fetch(target, { ...init, cache: "no-store", signal: AbortSignal.timeout(TIMEOUT_MS) });
 }
 
 export async function requestWithFallback(
   url: string,
   init: Omit<RequestInit, "signal" | "cache">,
 ): Promise<Response> {
-  const urls = candidateUrls(url);
-  let last: unknown;
-  for (let i = 0; i < urls.length; i++) {
-    const target = urls[i];
+  const attempt = async (target: string): Promise<Response | null> => {
     try {
-      return await fetch(target, {
-        ...init,
-        cache: "no-store",
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      });
+      return await doFetch(target, init);
     } catch (e) {
-      last = e;
-      const next = urls[i + 1];
-      if (!next || !isConnectError(e)) throw e;
-      console.error(
-        `[coins] ${safeTarget(target)} unreachable (${describeFetchError(e)}); retrying via ${safeTarget(next)}`,
-      );
+      if (!isConnectError(e)) throw e;
+      console.error(`[coins] ${safeTarget(target)} unreachable (${describeFetchError(e)})`);
+      return null;
     }
+  };
+
+  const fast = fastCandidateUrls(url);
+  for (const target of fast) {
+    const res = await attempt(target);
+    if (res) return res;
   }
-  throw last;
+
+  // Discovery before burning the configured host's hairpin timeout.
+  try {
+    const port = new URL(withScheme(url)).port;
+    if (discoveryEnabled() && port) {
+      const host = await discoverLocalBot(port);
+      if (host) {
+        const target = swapHost(url, host);
+        if (target !== url && !fast.includes(target)) {
+          const res = await attempt(target);
+          if (res) return res;
+          if (discovered?.host === host) {
+            discovered = null; // dropped — re-scanned after the pause
+            rescanAfter = Date.now() + RESCAN_AFTER_MS;
+          }
+        }
+      }
+    }
+  } catch {
+    // fall through to the configured host
+  }
+
+  return doFetch(url, init);
 }
 
 export async function fetchBalance(discordId: string, uuid = ""): Promise<BalanceResult> {
