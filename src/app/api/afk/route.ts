@@ -39,13 +39,14 @@ export async function GET() {
   return NextResponse.json({ state: coinsConfigured() ? "idle" : "unconfigured", ...snapshot(row) });
 }
 
-/** Stop: release the tab lock so another tab can start immediately. */
+/** Stop: release the tab lock and discard the partial minute, so the next
+ *  run always counts from a full 60s tick. */
 export async function DELETE() {
   const c = await ctx();
   if (!c) return NextResponse.json({ state: "signed-out" }, { status: 401 });
   await prisma.afkState.updateMany({
     where: { userId: c.userId },
-    data: { lastBeat: new Date(0), version: { increment: 1 } },
+    data: { lastBeat: new Date(0), carry: 0, version: { increment: 1 } },
   });
   return NextResponse.json({ state: "idle" });
 }
@@ -91,8 +92,11 @@ export async function POST(req: Request) {
 
   const day = today();
   let dayCoins = row.day === day ? row.dayCoins : 0;
-  let carry = row.carry;
-  if (sameTab && gap <= MAX_GAP) carry += Math.min(Math.floor(gap), MAX_CREDIT_PER_BEAT);
+  // A gap beyond MAX_GAP — a stop, a reload or a long hidden period —
+  // restarts the minute instead of banking stale seconds. (Keeping the old
+  // carry here made the next run award early: leftover 30s + one 30s beat
+  // = a "1 minute" award at 30s.)
+  let carry = gap > MAX_GAP ? 0 : row.carry + Math.min(Math.floor(gap), MAX_CREDIT_PER_BEAT);
 
   if (dayCoins >= CAP) {
     await prisma.afkState.updateMany({
