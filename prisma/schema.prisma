@@ -103,3 +103,12 @@ model AfkState {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+/// Latest proxy-reported status snapshot from the JackLink Velocity plugin
+/// (`POST /api/server/report`). Single row (id = "latest").
+model ServerStatus {
+  id        String   @id
+  /// Raw JSON: { online, players:{online,max?}, version, servers:[{name,online}] }
+  payload   String
+  updatedAt DateTime @updatedAt
+}

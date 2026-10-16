@@ -112,6 +112,13 @@ const STATEMENTS = [
   )`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "VerificationToken_identifier_token_key"
     ON "VerificationToken"("identifier", "token")`,
+
+  // Latest proxy status snapshot reported by the JackLink Velocity plugin.
+  `CREATE TABLE IF NOT EXISTS "ServerStatus" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "payload" TEXT NOT NULL,
+    "updatedAt" TEXT NOT NULL
+  )`,
 ];
 
 /**
@@ -143,7 +150,7 @@ async function main() {
     await db.batch(STATEMENTS.map((sql) => ({ sql, args: [] })));
     await applyAlters(db);
     const tables = await db.execute(
-      `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('User','Account','Session','VerificationToken','MinecraftLink','LinkEvent','AfkState') ORDER BY name`,
+      `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('User','Account','Session','VerificationToken','MinecraftLink','LinkEvent','AfkState','ServerStatus') ORDER BY name`,
     );
     console.log(
       `[init-db] ready: ${file} (tables: ${tables.rows.map((r) => r.name).join(", ")})`,

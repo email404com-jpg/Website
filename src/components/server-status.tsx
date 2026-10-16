@@ -8,6 +8,8 @@ type Payload = {
   online?: boolean;
   players?: { online: number; max?: number };
   version?: string;
+  servers?: { name: string; online: number }[];
+  stale?: boolean;
 };
 
 type Phase = "loading" | "ready";
@@ -53,6 +55,7 @@ export function ServerStatus() {
 
   const showPlayers =
     payload?.state === "ok" && payload.players !== undefined;
+  const servers = payload?.state === "ok" ? payload.servers ?? [] : [];
 
   return (
     <div className="border border-line bg-surface/80 backdrop-blur-sm">
@@ -92,6 +95,7 @@ export function ServerStatus() {
             <div className="h-4 w-32 bg-surface-raised" />
           </div>
         ) : payload?.state === "ok" ? (
+          <>
           <div className="grid gap-6 sm:grid-cols-3">
             <div>
               <p className="jn-eyebrow text-fg-subtle">
@@ -101,10 +105,12 @@ export function ServerStatus() {
                 {showPlayers ? (
                   <>
                     {payload.players?.online}
-                    <span className="text-fg-subtle">
-                      {" / "}
-                      {payload.players?.max}
-                    </span>
+                    {payload.players?.max !== undefined && (
+                      <span className="text-fg-subtle">
+                        {" / "}
+                        {payload.players.max}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <span className="text-fg-subtle">—</span>
@@ -128,6 +134,28 @@ export function ServerStatus() {
               </p>
             </div>
           </div>
+
+          {servers.length > 0 ? (
+            <div className="mt-6 border-t border-line pt-5">
+              <p className="jn-eyebrow text-fg-subtle">By server</p>
+              <ul className="mt-3 divide-y divide-line border-y border-line">
+                {servers.map((s) => (
+                  <li
+                    key={s.name}
+                    className="flex items-center justify-between py-2.5"
+                  >
+                    <span className="font-mono text-sm uppercase tracking-wide text-fg-muted">
+                      {s.name}
+                    </span>
+                    <span className="font-mono text-sm tabular-nums text-fg">
+                      {s.online}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          </>
         ) : (
           <div className="max-w-xl">
             <p className="text-lg text-fg">

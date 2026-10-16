@@ -117,7 +117,8 @@ Main nav (`site.nav`): Modes (#modes), Coins (/coins), **Store** (external → s
 | Route | Auth | What it does |
 |---|---|---|
 | `/api/auth/[...nextauth]` | — | Auth.js handlers |
-| `/api/server` | none | Proxies `JN_MINECRAFT_STATUS_URL`, normalizes `{online, players{online,max}, version}`; `{state:"unconfigured"}` when unset |
+| `/api/server` | none | Serves live status: prefers a **fresh** plugin snapshot (`ServerStatus` "latest" row ≤ 120s old), else proxies `JN_MINECRAFT_STATUS_URL`; returns honest `{online:false, stale}` when the proxy stops reporting, `{state:"unconfigured"}` when nothing is wired |
+| `/api/server/report` POST | `Bearer JN_LINK_API_KEY` (timing-safe) | JackLink Velocity proxy pushes a snapshot `{online, players{online,max?}, version, servers[{name,online}]}` → upserts the single `ServerStatus` "latest" row |
 | `/api/coins` GET | session | Balance for the signed-in user (see §5). Returns `{state:"ok",coins}` / `unconfigured` / `unlinked` / `error` (+`reason`) |
 | `/api/link` GET/POST/DELETE | session | Link status / issue 6-char code (10 min) / unlink |
 | `/api/link/confirm` POST | `Bearer JN_LINK_API_KEY` (timing-safe) | For the Minecraft plugin: `{code, uuid, username}`; 409 if uuid already linked, 503 if key unset |
