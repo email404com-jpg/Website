@@ -91,6 +91,8 @@ model AfkState {
   userId   String   @unique
   tabId    String
   lastBeat DateTime
+  /// Milliseconds banked toward the current 60s award tick (exact — no
+  /// per-gap second truncation, so the award never slips an extra interval).
   carry    Int      @default(0)
   seq      Int      @default(0)
   day      String

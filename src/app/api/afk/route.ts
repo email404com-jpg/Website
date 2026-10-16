@@ -29,7 +29,9 @@ async function ctx() {
 
 function snapshot(row: { carry: number; day: string; dayCoins: number } | null) {
   const dayCoins = row && row.day === today() ? row.dayCoins : 0;
-  return { rate: RATE, cap: CAP, dayCoins, carry: row?.carry ?? 0 };
+  // carry is stored in milliseconds for exact award timing, but the API reports
+  // seconds into the current minute for display.
+  return { rate: RATE, cap: CAP, dayCoins, carry: Math.floor((row?.carry ?? 0) / 1000) };
 }
 
 export async function GET() {
@@ -80,7 +82,8 @@ export async function POST(req: Request) {
     }
   }
 
-  const gap = (now.getTime() - row.lastBeat.getTime()) / 1000;
+  const gapMs = now.getTime() - row.lastBeat.getTime();
+  const gap = gapMs / 1000;
   const sameTab = row.tabId === tabId;
 
   if (!sameTab && gap < MAX_GAP) {
@@ -95,8 +98,10 @@ export async function POST(req: Request) {
   // A gap beyond MAX_GAP — a stop, a reload or a long hidden period —
   // restarts the minute instead of banking stale seconds. (Keeping the old
   // carry here made the next run award early: leftover 30s + one 30s beat
-  // = a "1 minute" award at 30s.)
-  let carry = gap > MAX_GAP ? 0 : row.carry + Math.min(Math.floor(gap), MAX_CREDIT_PER_BEAT);
+  // = a "1 minute" award at 30s.) carry is tracked in ms so the minute total is
+  // exact — per-gap second truncation could short the total and slip the award
+  // a whole extra interval.
+  let carry = gap > MAX_GAP ? 0 : row.carry + Math.min(gapMs, MAX_CREDIT_PER_BEAT * 1000);
 
   if (dayCoins >= CAP) {
     await prisma.afkState.updateMany({
@@ -106,7 +111,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ state: "capped", ...snapshot({ carry: 0, day, dayCoins }) });
   }
 
-  const minutes = Math.floor(carry / 60);
+  const minutes = Math.floor(carry / 60000);
   let award = Math.min(minutes * RATE, CAP - dayCoins);
   award -= award % RATE;
   let seq = row.seq;
@@ -117,7 +122,7 @@ export async function POST(req: Request) {
     const r = await adjustCoins(c.discordId, award, "AFK earning", key);
     if (r.ok) {
       seq = row.seq + 1;
-      carry -= minutes * 60;
+      carry -= minutes * 60000;
       dayCoins += award;
       console.log(`[afk] awarded ${award} coins (seq ${seq}, day ${dayCoins}/${CAP})`);
     } else {

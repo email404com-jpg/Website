@@ -87,10 +87,20 @@ export function AfkClient() {
   const active = running && !hidden;
   useEffect(() => {
     if (!active) return;
-    void beat();
-    timer.current = setInterval(beat, BEAT_MS);
+    let cancelled = false;
+    // Send the first beat, then start the heartbeat only after it resolves.
+    // The server sets the minute's baseline (lastBeat) when that first beat is
+    // processed; anchoring the interval to its response guarantees every later
+    // gap is >= 30s, so the minute completes on the 3rd beat (~60s) instead of
+    // falling a fraction short and slipping a whole extra interval (~90s).
+    void beat().finally(() => {
+      if (cancelled) return;
+      if (timer.current) clearInterval(timer.current);
+      timer.current = setInterval(beat, BEAT_MS);
+    });
     const tick = setInterval(() => setSec((s) => (s + 1) % 60), 1000);
     return () => {
+      cancelled = true;
       if (timer.current) clearInterval(timer.current);
       clearInterval(tick);
     };
