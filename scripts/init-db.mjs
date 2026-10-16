@@ -69,6 +69,8 @@ const STATEMENTS = [
     "username" TEXT,
     "code" TEXT,
     "codeExpires" TEXT,
+    "unverifyCode" TEXT,
+    "unverifyCodeExpires" TEXT,
     "linkedAt" TEXT,
     CONSTRAINT "MinecraftLink_userId_fkey" FOREIGN KEY ("userId")
       REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -89,6 +91,24 @@ const STATEMENTS = [
       REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
   )`,
   `CREATE INDEX IF NOT EXISTS "LinkEvent_userId_createdAt_idx" ON "LinkEvent"("userId", "createdAt")`,
+
+  // Secret audit ledger: one row per verify / unverify / purchase, each with
+  // a generated refId. Never read back by any route — see src/lib/audit.ts.
+  `CREATE TABLE IF NOT EXISTS "AuditEvent" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "refId" TEXT NOT NULL,
+    "kind" TEXT NOT NULL,
+    "source" TEXT NOT NULL,
+    "userId" TEXT,
+    "uuid" TEXT,
+    "username" TEXT,
+    "meta" TEXT,
+    "createdAt" TEXT NOT NULL,
+    CONSTRAINT "AuditEvent_userId_fkey" FOREIGN KEY ("userId")
+      REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "AuditEvent_refId_key" ON "AuditEvent"("refId")`,
+  `CREATE INDEX IF NOT EXISTS "AuditEvent_userId_createdAt_idx" ON "AuditEvent"("userId", "createdAt")`,
 
   `CREATE TABLE IF NOT EXISTS "AfkState" (
     "id" TEXT NOT NULL PRIMARY KEY,
@@ -128,6 +148,17 @@ const STATEMENTS = [
  */
 const ALTERS = [
   { table: "AfkState", column: "version", ddl: `ALTER TABLE "AfkState" ADD COLUMN "version" INTEGER NOT NULL DEFAULT 0` },
+  { table: "MinecraftLink", column: "unverifyCode", ddl: `ALTER TABLE "MinecraftLink" ADD COLUMN "unverifyCode" TEXT` },
+  { table: "MinecraftLink", column: "unverifyCodeExpires", ddl: `ALTER TABLE "MinecraftLink" ADD COLUMN "unverifyCodeExpires" TEXT` },
+];
+
+/**
+ * An index on a column added by ALTER has to be created after the ALTER —
+ * SQLite cannot CREATE INDEX against a column that does not exist yet, and
+ * that would abort the whole STATEMENTS batch on an existing database.
+ */
+const POST_ALTERS = [
+  `CREATE UNIQUE INDEX IF NOT EXISTS "MinecraftLink_unverifyCode_key" ON "MinecraftLink"("unverifyCode")`,
 ];
 
 async function applyAlters(db) {
@@ -149,8 +180,9 @@ async function main() {
   try {
     await db.batch(STATEMENTS.map((sql) => ({ sql, args: [] })));
     await applyAlters(db);
+    await db.batch(POST_ALTERS.map((sql) => ({ sql, args: [] })));
     const tables = await db.execute(
-      `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('User','Account','Session','VerificationToken','MinecraftLink','LinkEvent','AfkState','ServerStatus') ORDER BY name`,
+      `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('User','Account','Session','VerificationToken','MinecraftLink','LinkEvent','AuditEvent','AfkState','ServerStatus') ORDER BY name`,
     );
     console.log(
       `[init-db] ready: ${file} (tables: ${tables.rows.map((r) => r.name).join(", ")})`,

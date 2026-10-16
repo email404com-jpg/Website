@@ -97,7 +97,8 @@ Other tokens: `--duration-fast`/`--duration`/`--duration-slow` (120/200/320ms), 
 | `/status` | `app/status/page.tsx` | Live status via `/api/server`, polled |
 | `/faq` `/rules` `/terms` | pages | Content in `site.ts` (FAQ) or the page file (rules/terms) |
 | `/login` | `app/login/page.tsx` | Discord sign-in page; honors `?callbackUrl=` |
-| `not-found`, `icon.png`, `apple-icon.png`, `robots.ts`, `sitemap.ts` | | sitemap lists `/`, `/coins`, `/status`, `/faq`, `/rules`, `/terms`, `/login` |
+| `/unverify` | `app/unverify/page.tsx` | Cut the Minecraft link. Signed-out → Discord sign-in; linked → `UnverifyCard` mints a 6-char code (`/unverify CODE`, 10 min) redeemed in game |
+| `not-found`, `icon.png`, `apple-icon.png`, `robots.ts`, `sitemap.ts` | | sitemap lists `/`, `/coins`, `/status`, `/faq`, `/rules`, `/terms`, `/login`, `/unverify` |
 | `public/llms.txt`, `og.png`, `logo-jn*.{png,webp}`, `media/*.webp` | | `json-ld.tsx` emits Organization + WebSite JSON-LD in `<head>` |
 
 ### Store host (`store.jacknetwork.in`) — files live under `src/app/store/*`
@@ -122,6 +123,8 @@ Main nav (`site.nav`): Modes (#modes), Coins (/coins), **Store** (external → s
 | `/api/coins` GET | session | Balance for the signed-in user (see §5). Returns `{state:"ok",coins}` / `unconfigured` / `unlinked` / `error` (+`reason`) |
 | `/api/link` GET/POST/DELETE | session | Link status / issue 6-char code (10 min) / unlink |
 | `/api/link/confirm` POST | `Bearer JN_LINK_API_KEY` (timing-safe) | For the Minecraft plugin: `{code, uuid, username}`; 409 if uuid already linked, 503 if key unset |
+| `/api/unverify` GET/POST | session | Status, then issue a 6-char **unverify** code (10 min) — only while actually linked (else 409) |
+| `/api/link/unconfirm` POST | `Bearer JN_LINK_API_KEY` (timing-safe) | Plugin redeems `/unverify <code>`: 404 unknown/expired, **403** if the code belongs to a different account; deletes the link row and writes the audit entry |
 | `/api/afk` GET/POST/DELETE | session | AFK state / heartbeat / stop — fixed and verified this session, §8 |
 
 ---
@@ -150,7 +153,19 @@ Main nav (`site.nav`): Modes (#modes), Coins (/coins), **Store** (external → s
 `store-header.tsx` = logo, "← jacknetwork.in", `CoinButton` (only when authenticated) + `AuthNav externalLogin`. `coins-dialog.tsx` = native `<dialog>` (`jn-dialog`) with views: menu (4 tiles), **How to earn** (numbered rows from `site.coins.sources` + AFK + Buy), **Link Minecraft** (none → generate code → pending with code boxes, `/link CODE`, copy button, countdown, 4 s polling → linked with Unlink), **AFK earning** (summary, steps, "Open AFK page" button → `/afk`), **Buy coins** (coming soon + Discord button).
 
 ### 6.3 Minecraft linking
-Model `MinecraftLink` (`userId` unique, `uuid?` unique, `username?`, `code?` unique, `codeExpires?`, `linkedAt?`). Code alphabet `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, TTL 10 min. **The Minecraft plugin that runs `/link <code>` and calls `/api/link/confirm` does not exist yet.** Verified earlier with a simulated confirm call [reported].
+Model `MinecraftLink` (`userId` unique, `uuid?` unique, `username?`, `code?` unique, `codeExpires?`, `linkedAt?`, `unverifyCode?` unique, `unverifyCodeExpires?`). Code alphabet `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`, TTL 10 min (same alphabet/TTL for both codes). The JackLink Velocity plugin runs `/link <code>` and `/unverify <code>` against `/api/link/confirm` and `/api/link/unconfirm` [verified end-to-end in QA, `.qa/unverify-test.mjs` 30/30].
+
+**Unverify flow** (mirror of link): `/unverify` page → `POST /api/unverify` mints a code → player runs `/unverify CODE` on the proxy → `POST /api/link/unconfirm` (Bearer) validates the code **belongs to that same UUID** (403 otherwise) and deletes the row. The web "Unlink account" button (`DELETE /api/link`) still exists as the no-game path.
+
+**Already-linked guard:** `/link` by a linked player is refused in-game with a private message pointing at `https://jacknetwork.in/unverify` (`messages.link-already`, `website.unverify-url` in the plugin config).
+
+### 6.3b Secret audit ledger (`AuditEvent`)
+`prisma/AuditEvent` + `scripts/init-db.mjs` (table + `refId` unique index): one row per sensitive action — `verify_code_issued | verify | verify_refused | unverify_code_issued | unverify | purchase` — each stamped with a generated non-sequential `refId` (`JN-` + 10 chars, `src/lib/audit.ts` `generateRefId`, collision-retried).
+
+- Writer: `recordAudit()` in `src/lib/audit.ts`. Best-effort (a failed audit row never breaks the action), `meta` holds optional JSON detail (item/amount/price) and is **never serialised to a client**.
+- `recordLinkEvent()` now writes **both** `LinkEvent` (unchanged, link-specific detail) and the `AuditEvent` mirror.
+- **There is deliberately no read API.** No route under `/api/*` returns `AuditEvent`, so `refId` and the rest stay inside the database (verified: `/api/audit`, `/api/audit/events`, `/api/events`, `/api/ledger` → 404).
+- `purchase` kind exists but **nothing writes it yet** — there is no purchase/checkout flow in the repo (§ see Buy Coins, no payment provider). When one lands, call `recordAudit({ kind: "purchase", source: "web", userId, meta: {…} })`.
 
 ### 6.4 AFK earning (`/afk`) — working, verified this session
 - Page `store/afk/page.tsx`; client `components/store/afk-client.tsx` (Start/Stop, ring countdown, "This session", "Today x / cap"; heartbeat every 30 s **only while running and `document.visibilityState === "visible"`**; random per-tab id; sends event `jn:coins-refresh` after an award).
@@ -215,8 +230,10 @@ Owner said "Leave it, store is working" — so DNS/hosting is evidently already 
 
 **Copy and configuration this session [verified]:** `.env.example` created (it did not exist) with every variable the code reads, including the five that were missing; stale "store opens soon / coming soon" wording replaced with what is actually true in `src/lib/site.ts`, `public/llms.txt`, `/login`, `/coins`; `site.coins.sources` now lists AFK earning as a real fourth way to earn; README's non-existent `rules.txt` reference replaced with `AGENTS.md` + `HANDOVER.md`.
 
+**Unverify + secret audit ledger — added and verified this session [verified].** New page `/unverify` (`app/unverify/page.tsx` + `components/unverify-card.tsx`) mirroring the link card: signed-out → Discord sign-in, linked → mint a 6-char code, `/unverify CODE` in game, 10-minute countdown, live 4s polling until the link is cut. New routes `GET/POST /api/unverify` (session) and `POST /api/link/unconfirm` (Bearer; 404 unknown/expired, 403 wrong account). `MinecraftLink` gained `unverifyCode`/`unverifyCodeExpires` via guarded `ALTER TABLE` + a post-ALTER unique index (an index on an ALTER-added column cannot go in the main `STATEMENTS` batch — it would abort on an existing database). JackLink Velocity gained the `/unverify <code>` command and now answers an already-linked `/link` with a private message pointing at `jacknetwork.in/unverify` (`messages.link-already`, `website.unverify-url`). Secret ledger `AuditEvent` (`src/lib/audit.ts`) stamps every verify/unverify — and, later, purchase — with a generated `refId`; **no route reads it back**. QA: `.qa/unverify-test.mjs` 30/30, `.qa/unverify-visual.mjs` 18/18 (desktop + mobile, no overflow, countdown starts 9:59), `tsc`/`eslint`/`next build` clean, `mvn package` clean.
+
 **Intentionally disabled / placeholder:** rank catalogs (empty — waiting on the owner), Buy Coins (no payment provider), AdSense (env-gated, not tested with real ads).
-**Not built:** Minecraft plugin `/link`; rank purchase flow; payment provider; leaderboard; anything not listed here.
+**Not built:** rank purchase flow; payment provider; leaderboard; anything not listed here. (There is **no purchase/checkout code at all** — no Stripe/Tebex, no orders table; `AuditEvent` is ready for it via `kind: "purchase"` but nothing writes that kind yet.)
 **Cosmetic fixes this session [verified]:** the AFK ring drew a stray crimson dot at 0% (round line-cap on a zero-length dash) — fixed; the page said "Next coins in 59s" while idle — now "Press start to earn".
 
 **404 page — simplified this session [verified].** `src/app/not-found.tsx` lost `SiteHeader`/`SiteFooter` and the "Error" kicker; it is now just `404`, one line, and a `jn-btn jn-btn-primary` "Go home". This also fixes a real bug: the file is shared by **both** hosts, so a bad URL on `store.jacknetwork.in` used to render the *marketing* header. Verified on main and store hosts at 1440 and 390: no header/footer, no horizontal overflow, button 48px tall (≥44px tap target). "Go home" links to `/`, which the proxy maps to the correct home per host.
@@ -318,7 +335,10 @@ Your tasks, in order:
 2. Diagnose the live "Coins: —": use /api/coins `reason` and server logs; tighten extractBalance once the real response shape is known (ask the owner for one sample JSON of the balance and adjust endpoints, with the token redacted).
 3. Add JN_COINS_ADJUST_URL, JN_AFK_RATE, JN_AFK_DAILY_CAP, NEXT_PUBLIC_ADSENSE_CLIENT, NEXT_PUBLIC_ADSENSE_SLOT to .env.example; update stale "store opens soon"/"coming soon" copy honestly in site.ts, llms.txt and the login page; fix the README's rules.txt reference.
 4. Only after the owner supplies rank names, prices (in coins), perks and how ranks are granted in game: fill catalog.practice.ranks / catalog.survival.ranks in src/lib/store.ts and build the purchase flow (POST adjust with a NEGATIVE amount + idempotency key, then grant).
-5. JackLink plugin (Velocity + Paper) is DONE and pushed to github.com/email404com-jpg/JackLink (private). Jars: JackLink-Velocity.jar (proxy: /verify, /link <code>, /coins) and JackLink-Paper.jar (PlaceholderAPI expansion %jack_coins% for DeluxeHub sidebars). Website-side plugin API (GET /api/link/status, GET /api/link/coins, POST /api/link/confirm — all Bearer JN_LINK_API_KEY) and LinkEvent history table are already live. To deploy: drop JackLink-Velocity.jar in the proxy plugins/ dir, set api.key in plugins/jacklink/config.yml to JN_LINK_API_KEY; drop JackLink-Paper.jar on the lobby backend (needs PlaceholderAPI), set api.key the same way; use %jack_coins% in DeluxeHub config. Payment provider for Buy Coins is still pending.
+5. JackLink plugin (Velocity + Paper) is DONE and pushed to github.com/email404com-jpg/JackLink (private). Jars: JackLink-Velocity.jar (proxy: /verify, /link <code>, /unverify <code>, /coins + the /status reporter) and JackLink-Paper.jar (PlaceholderAPI expansion %jack_coins% for DeluxeHub sidebars). Website-side plugin API (GET /api/link/status, GET /api/link/coins, POST /api/link/confirm, POST /api/link/unconfirm, POST /api/server/report — all Bearer JN_LINK_API_KEY) plus LinkEvent and the secret AuditEvent ledger are already live.
+   **Deployment is NOT "the same jar on all four servers"** — there are two different, mutually exclusive jars and no runtime platform detection: JackLink-Velocity.jar goes ONLY on the Velocity proxy (it carries all four commands and the status reporter); JackLink-Paper.jar goes on each backend that shows a coin scoreboard (lobby minimum; practice/survival only if they use %jack_coins%); a backend with no coin display needs neither. Every jar you install gets the SAME api.key (= JN_LINK_API_KEY) and api.base-url.
+   Also live: the /unverify page + flow, and the AuditEvent ledger (generated refId per verify/unverify, never exposed — add `kind:"purchase"` calls when a purchase flow exists; none does yet).
+   To deploy: drop the jars as above, set api.key in plugins/jacklink/config.yml (Velocity) and plugins/JackLink/config.yml (Paper), use %jack_coins% in DeluxeHub config. Payment provider for Buy Coins is still pending.
 
 Follow the QA loop for any visual change (build, run, screenshot at 1440 and 390, inspect, fix), run `npx tsc --noEmit` and `npx eslint src`, and report honestly what you verified and what you could not.
 ```
