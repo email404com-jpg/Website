@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { site } from "@/lib/site";
 import { Providers } from "@/components/session-provider";
+import { ScrollToTop } from "@/components/scroll-to-top";
 import { JsonLd } from "@/components/json-ld";
 import "./globals.css";
 
@@ -82,6 +83,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <JsonLd />
       </head>
       <body className="min-h-full flex flex-col">
+        <ScrollToTop />
         <Providers>{children}</Providers>
       </body>
     </html>
