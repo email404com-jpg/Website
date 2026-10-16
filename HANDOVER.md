@@ -9,7 +9,7 @@ Written 2026-10-14 from a full inspection of the repo and the conversation histo
 
 - **Jack Network** is a Minecraft server network (Java + Bedrock, single address `play.jacknetwork.in`, no separate port) with two modes: **Practice PvP** and **Survival**. Owner/operator: Jack (also runs an unrelated server, "Noble SMP" — keep the brands separate).
 - The app serves two hosts from **one Next.js codebase and one deployment**:
-  - `https://jacknetwork.in` — marketing/info site: home, coins explainer, status, FAQ, rules, terms, credits, login.
+  - `https://jacknetwork.in` — marketing/info site: home, coins explainer, status, FAQ, rules, terms, login.
   - `https://store.jacknetwork.in` — coin store: hub (Practice / Survival / Buy Coins), rank catalogs (empty for now), coin balance + menu, Minecraft account linking, AFK earning.
 - Players sign in once with **Discord**; the session cookie is shared across `*.jacknetwork.in`, so the store is automatically logged in.
 - The Discord invite is `https://dsc.gg/jackknetwork` **on purpose** (owner confirmed) — do not "correct" the spelling.
@@ -70,7 +70,7 @@ Other tokens: `--duration-fast`/`--duration`/`--duration-slow` (120/200/320ms), 
 - **Sharp 1–4px corners, hairlines, no pills.** The brief explicitly forbids pill buttons/identical rounded cards; sharp geometry reads "luxury / military-tech". Cards are separated by 1px lines (`gap-px bg-line`) rather than shadows.
 - **Type:** *Big Shoulders Display* 700/800/900 (condensed, always uppercase via `@layer base .font-display`), *Manrope* variable (body), *JetBrains Mono* variable (codes, numbers, eyebrows). Self-hosted because Google Fonts is blocked in the build sandbox and self-hosting is faster/privacy-friendlier. CSS variables: `--font-display-face`, `--font-body-face`, `--font-mono-face` (the Tailwind `--font-*` tokens wrap them; they were renamed `*-face` to avoid a self-referential variable bug).
 - **3D hero is pure CSS, not WebGL.** The brief says don't add a large dependency just to claim 3D. The emblem (`hero-emblem.tsx`) is the real logo (`public/logo-jn.webp`) layered in `preserve-3d`: stacked dark copies for extrusion (`.jn-depth-1..4`), a masked specular sweep (`.jn-spec`), halo, floor with rings + reflection, orbit ring, pixel shards. Pointer parallax writes two CSS variables and is **disabled for reduced motion and coarse pointers**. The owner asked for "more 3D" once; this is the result. Known weakness: floor rings are faint.
-- **Stock Minecraft art is grayscale** (`.jn-mono`) except the Nether art (red already fits). Blue-sky screenshots clashed with black/silver/crimson. Images are CC BY 3.0 from Wikimedia Commons — attribution lives on `/credits` (owner did not want it in the footer; the license still requires it somewhere, so do not delete `/credits`).
+- **Stock Minecraft art is grayscale** (`.jn-mono`) except the Nether art (red already fits). Blue-sky screenshots clashed with black/silver/crimson. Images were CC BY 3.0 from Wikimedia Commons with attribution on `/credits`; the owner has since switched to their own images, and `/credits` plus the footer Credits link were removed at their request (Oct 15, 2026) — do not re-add them.
 - **One copy-address control** on the home page (owner complained about the IP being repeated everywhere).
 - **Motion:** entrance (`.jn-enter`, `.jn-enter-fade`) is CSS-only so content is in the DOM immediately (crawlers/no-JS safe); scroll reveals (`Reveal`, IntersectionObserver, `rootMargin -8%`); hover feedback via underline/`translate`; nothing gates content on animation; everything has reduced-motion overrides (end of `globals.css`).
 
@@ -96,9 +96,8 @@ Other tokens: `--duration-fast`/`--duration`/`--duration-slow` (120/200/320ms), 
 | `/coins` | `app/coins/page.tsx` | How coins work. Copy still says purchases "coming soon" |
 | `/status` | `app/status/page.tsx` | Live status via `/api/server`, polled |
 | `/faq` `/rules` `/terms` | pages | Content in `site.ts` (FAQ) or the page file (rules/terms) |
-| `/credits` | `app/credits/page.tsx` | CC BY 3.0 image credits — keep |
 | `/login` | `app/login/page.tsx` | Discord sign-in page; honors `?callbackUrl=` |
-| `not-found`, `icon.png`, `apple-icon.png`, `robots.ts`, `sitemap.ts` | | sitemap lists `/`, `/coins`, `/status`, `/faq`, `/rules`, `/terms`, `/credits`, `/login` |
+| `not-found`, `icon.png`, `apple-icon.png`, `robots.ts`, `sitemap.ts` | | sitemap lists `/`, `/coins`, `/status`, `/faq`, `/rules`, `/terms`, `/login` |
 | `public/llms.txt`, `og.png`, `logo-jn*.{png,webp}`, `media/*.webp` | | `json-ld.tsx` emits Organization + WebSite JSON-LD in `<head>` |
 
 ### Store host (`store.jacknetwork.in`) — files live under `src/app/store/*`
@@ -172,7 +171,7 @@ Model `MinecraftLink` (`userId` unique, `uuid?` unique, `username?`, `code?` uni
 ```
 src/proxy.ts                 host routing (store subdomain) — keep matcher in sync
 src/auth.ts, auth.config.ts  Auth.js (auth.config.ts is a leftover duplicate provider config, imported nowhere [verified by grep])
-src/lib/site.ts              all marketing copy: hero text, facts, modes, coins sources, FAQ, nav, credits
+src/lib/site.ts              all marketing copy: hero text, facts, modes, coins sources, FAQ, nav
 src/lib/store.ts             store categories, catalog, AFK copy
 src/lib/coins-api.ts         server client for the economy API
 src/lib/login-url.ts, mc-link.ts, copy.ts, prisma.ts

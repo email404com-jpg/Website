@@ -45,6 +45,7 @@ model User {
   sessions Session[]
   mcLink   MinecraftLink?
   afk      AfkState?
+  linkEvents LinkEvent[]
 }
 
 model VerificationToken {
@@ -67,6 +68,22 @@ model MinecraftLink {
   linkedAt    DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Audit trail of the Minecraft link lifecycle, tied to the Discord user:
+/// code_issued | linked | link_refused | unlinked (source: web | plugin).
+model LinkEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  uuid      String?
+  username  String?
+  event     String
+  source    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model AfkState {

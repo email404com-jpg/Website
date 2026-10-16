@@ -1,23 +1,14 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/prisma";
-
-
-function authorised(request: Request) {
-  const key = process.env.JN_LINK_API_KEY;
-  if (!key) return null; // not configured
-  const header = request.headers.get("authorization") ?? "";
-  const given = Buffer.from(header.replace(/^Bearer\s+/i, ""));
-  const expected = Buffer.from(key);
-  return given.length === expected.length && timingSafeEqual(given, expected);
-}
+import { pluginAuthorised } from "@/lib/plugin-auth";
+import { recordLinkEvent } from "@/lib/link-history";
 
 /**
  * Called by the Minecraft server (plugin) when a player runs `/link <code>`.
  *   POST { code, uuid, username }  +  Authorization: Bearer JN_LINK_API_KEY
  */
 export async function POST(request: Request) {
-  const ok = authorised(request);
+  const ok = pluginAuthorised(request);
   if (ok === null) {
     return NextResponse.json({ error: "link api not configured" }, { status: 503 });
   }
@@ -44,6 +35,13 @@ export async function POST(request: Request) {
 
   const taken = await prisma.minecraftLink.findUnique({ where: { uuid } });
   if (taken && taken.id !== link.id) {
+    await recordLinkEvent({
+      userId: link.userId,
+      uuid,
+      username,
+      event: "link_refused",
+      source: "plugin",
+    });
     return NextResponse.json({ error: "account already linked" }, { status: 409 });
   }
 
@@ -51,5 +49,6 @@ export async function POST(request: Request) {
     where: { id: link.id },
     data: { uuid, username, code: null, codeExpires: null, linkedAt: new Date() },
   });
+  await recordLinkEvent({ userId: link.userId, uuid, username, event: "linked", source: "plugin" });
   return NextResponse.json({ ok: true });
 }

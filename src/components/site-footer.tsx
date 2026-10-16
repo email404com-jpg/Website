@@ -119,14 +119,6 @@ export function SiteFooter() {
           <p>
             © {site.copyrightYear} {site.name}. All rights reserved.
           </p>
-          <p className="max-w-lg leading-relaxed sm:text-right">
-            <Link
-              href="/credits"
-              className="underline decoration-line-strong underline-offset-4 transition-colors hover:text-fg"
-            >
-              Credits
-            </Link>
-          </p>
         </div>
       </div>
     </footer>

@@ -77,6 +77,19 @@ const STATEMENTS = [
   `CREATE UNIQUE INDEX IF NOT EXISTS "MinecraftLink_uuid_key" ON "MinecraftLink"("uuid")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "MinecraftLink_code_key" ON "MinecraftLink"("code")`,
 
+  `CREATE TABLE IF NOT EXISTS "LinkEvent" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT NOT NULL,
+    "uuid" TEXT,
+    "username" TEXT,
+    "event" TEXT NOT NULL,
+    "source" TEXT NOT NULL,
+    "createdAt" TEXT NOT NULL,
+    CONSTRAINT "LinkEvent_userId_fkey" FOREIGN KEY ("userId")
+      REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE INDEX IF NOT EXISTS "LinkEvent_userId_createdAt_idx" ON "LinkEvent"("userId", "createdAt")`,
+
   `CREATE TABLE IF NOT EXISTS "AfkState" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "userId" TEXT NOT NULL,
@@ -130,7 +143,7 @@ async function main() {
     await db.batch(STATEMENTS.map((sql) => ({ sql, args: [] })));
     await applyAlters(db);
     const tables = await db.execute(
-      `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('User','Account','Session','VerificationToken','MinecraftLink','AfkState') ORDER BY name`,
+      `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('User','Account','Session','VerificationToken','MinecraftLink','LinkEvent','AfkState') ORDER BY name`,
     );
     console.log(
       `[init-db] ready: ${file} (tables: ${tables.rows.map((r) => r.name).join(", ")})`,

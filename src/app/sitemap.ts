@@ -12,7 +12,6 @@ const routes: Array<{
   { path: "/faq", changeFrequency: "monthly", priority: 0.8 },
   { path: "/rules", changeFrequency: "yearly", priority: 0.5 },
   { path: "/terms", changeFrequency: "yearly", priority: 0.5 },
-  { path: "/credits", changeFrequency: "yearly", priority: 0.2 },
   { path: "/login", changeFrequency: "yearly", priority: 0.3 },
 ];
 

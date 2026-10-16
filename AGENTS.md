@@ -14,7 +14,7 @@ One Next.js app that serves two hosts: `jacknetwork.in` (marketing site for the 
 6. **Keep the session object minimal** (`src/auth.ts` session callback returns only `user{id,name,email,image}` + `expires`). Do not re-add `sessionToken`.
 7. **Always run the QA loop** for visual work: build → run → screenshot desktop (1440) and mobile (390; ideally 320) → inspect → fix → repeat. Run `npx tsc --noEmit` and `npx eslint src`. Say plainly what you did not verify.
 8. **Respect `prefers-reduced-motion`**, keep tap targets ≥ 44px, no horizontal overflow, visible focus rings, content never gated behind animation.
-9. **Preserve working features:** auth, `/api/*`, SEO (metadata, canonical, `sitemap.ts`, `robots.ts`), JSON-LD (`json-ld.tsx`), `public/llms.txt`, `/credits` (CC BY 3.0 attribution is a licence requirement).
+9. **Preserve working features:** auth, `/api/*`, SEO (metadata, canonical, `sitemap.ts`, `robots.ts`), JSON-LD (`json-ld.tsx`), `public/llms.txt`. (The old `/credits` page was removed at the owner's request — the images are the owner's own, so no attribution is required; do not re-add it.)
 10. **Do not add dependencies** without a clear reason (the 3D hero is CSS on purpose).
 
 ## Next.js 16 gotchas (this repo uses `cacheComponents: true`)

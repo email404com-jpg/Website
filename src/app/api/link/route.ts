@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { generateLinkCode, LINK_CODE_TTL_MS } from "@/lib/mc-link";
-
+import { recordLinkEvent } from "@/lib/link-history";
 
 async function currentUserId() {
   const session = await auth();
@@ -54,6 +54,7 @@ export async function POST() {
         create: { userId, code, codeExpires },
         update: { code, codeExpires },
       });
+      await recordLinkEvent({ userId, event: "code_issued", source: "web" });
       return NextResponse.json(view(link));
     } catch {
       /* code collision — retry with a new one */
@@ -66,6 +67,16 @@ export async function POST() {
 export async function DELETE() {
   const userId = await currentUserId();
   if (!userId) return NextResponse.json({ state: "signed-out" }, { status: 401 });
+  const existing = await prisma.minecraftLink.findUnique({ where: { userId } });
   await prisma.minecraftLink.deleteMany({ where: { userId } });
+  if (existing?.uuid) {
+    await recordLinkEvent({
+      userId,
+      uuid: existing.uuid,
+      username: existing.username,
+      event: "unlinked",
+      source: "web",
+    });
+  }
   return NextResponse.json({ state: "none" });
 }

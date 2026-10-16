@@ -174,8 +174,4 @@ export const site = {
     { href: "/rules", label: "Rules" },
     { href: "/terms", label: "Terms" },
   ],
-  credits: {
-    images:
-      "Minecraft imagery via Wikimedia Commons, CC BY 3.0 (1.18 mountains, Nether, Taiga screenshots).",
-  },
 } as const;
