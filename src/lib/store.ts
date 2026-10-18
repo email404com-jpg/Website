@@ -2,6 +2,9 @@
  * Store configuration. Edit this file to change what the store shows —
  * nothing here is read from a database, and nothing is invented at runtime.
  */
+export type StoreCategoryId = (typeof store.categories)[number]["id"];
+export type CatalogId = keyof (typeof store)["catalog"];
+
 export type StoreItem = {
   id: string;
   name: string;
@@ -11,6 +14,22 @@ export type StoreItem = {
   perks: string[];
   /** false renders the card with a disabled "Coming soon" button */
   available: boolean;
+  /**
+   * Console command run on the item's server as the player buys it.
+   * `{username}` and `{uuid}` are replaced with the buyer's Minecraft account.
+   *   e.g. "lp user {username} parent add vip"
+   *      / "give {username} diamond 16"
+   * Empty until a real grant mechanism exists — purchases are refused if it
+   * is blank, before any coins are taken.
+   */
+  command: string;
+};
+
+/** Catalog id -> the Velocity server name the command runs on.
+ *  The Paper jar's `server-name` in config.yml must match these exactly. */
+const servers: Record<CatalogId, string> = {
+  practice: "practice",
+  survival: "survival",
 };
 
 export const store = {
@@ -46,7 +65,9 @@ export const store = {
     },
   ],
 
-  /** Per-mode catalogue. Add items here as they are announced. */
+  /** Per-mode catalogue. Add items here as they are announced.
+   *  `command` must contain `{username}` (or `{uuid}`) so the grant runs on
+   *  the right player, and `available: true` only after it is filled in. */
   catalog: {
     practice: { ranks: [] as StoreItem[] },
     survival: { ranks: [] as StoreItem[] },
@@ -64,4 +85,8 @@ export const store = {
   },
 } as const;
 
-export type StoreCategoryId = (typeof store.categories)[number]["id"];
+/** Velocity server name that runs this catalogue's console command, or null
+ *  if the catalogue has no route configured. */
+export function serverFor(catalogId: CatalogId): string | null {
+  return servers[catalogId] ?? null;
+}

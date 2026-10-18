@@ -139,6 +139,30 @@ const STATEMENTS = [
     "payload" TEXT NOT NULL,
     "updatedAt" TEXT NOT NULL
   )`,
+
+  // Coin purchase queued for in-game delivery. Only "pending" rows are ever
+  // handed to a plugin; the secret ID for the audit side lives in AuditEvent.
+  `CREATE TABLE IF NOT EXISTS "Purchase" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "idem" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "itemId" TEXT NOT NULL,
+    "mode" TEXT NOT NULL,
+    "server" TEXT NOT NULL,
+    "uuid" TEXT NOT NULL,
+    "username" TEXT NOT NULL,
+    "command" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'charging',
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "error" TEXT,
+    "createdAt" TEXT NOT NULL,
+    "deliveredAt" TEXT,
+    CONSTRAINT "Purchase_userId_fkey" FOREIGN KEY ("userId")
+      REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "Purchase_idem_key" ON "Purchase"("idem")`,
+  `CREATE INDEX IF NOT EXISTS "Purchase_server_status_idx" ON "Purchase"("server", "status")`,
+  `CREATE INDEX IF NOT EXISTS "Purchase_userId_createdAt_idx" ON "Purchase"("userId", "createdAt")`,
 ];
 
 /**
@@ -182,7 +206,7 @@ async function main() {
     await applyAlters(db);
     await db.batch(POST_ALTERS.map((sql) => ({ sql, args: [] })));
     const tables = await db.execute(
-      `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('User','Account','Session','VerificationToken','MinecraftLink','LinkEvent','AuditEvent','AfkState','ServerStatus') ORDER BY name`,
+      `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('User','Account','Session','VerificationToken','MinecraftLink','LinkEvent','AuditEvent','AfkState','ServerStatus','Purchase') ORDER BY name`,
     );
     console.log(
       `[init-db] ready: ${file} (tables: ${tables.rows.map((r) => r.name).join(", ")})`,

@@ -126,6 +126,9 @@ Main nav (`site.nav`): Modes (#modes), Coins (/coins), **Store** (external → s
 | `/api/unverify` GET/POST | session | Status, then issue a 6-char **unverify** code (10 min) — only while actually linked (else 409) |
 | `/api/link/unconfirm` POST | `Bearer JN_LINK_API_KEY` (timing-safe) | Plugin redeems `/unverify <code>`: 404 unknown/expired, **403** if the code belongs to a different account; deletes the link row and writes the audit entry |
 | `/api/afk` GET/POST/DELETE | session | AFK state / heartbeat / stop — fixed and verified this session, §8 |
+| `/api/purchase` POST | session | Buy an item with coins: `{mode, itemId, idem}` → `ok` (queue row `pending`), `insufficient`, `unlinked`, `unavailable`, `failed`. Idempotent on `idem` |
+| `/api/purchase/pending?server=<name>` GET | `Bearer JN_LINK_API_KEY` (timing-safe) | Returns `{purchases:[{id, uuid, username, command}]}` — charged and waiting on that server |
+| `/api/purchase/ack` POST | `Bearer JN_LINK_API_KEY` (timing-safe) | `{id, ok, error?}` → `{status}`; a failed run is retried up to 5 times, then `failed` |
 
 ---
 
@@ -177,8 +180,20 @@ Model `MinecraftLink` (`userId` unique, `uuid?` unique, `username?`, `code?` uni
 ### 6.5 Ads
 `components/store/ad-slot.tsx`: Google AdSense unit, renders **nothing** unless `NEXT_PUBLIC_ADSENSE_CLIENT` and `NEXT_PUBLIC_ADSENSE_SLOT` are set **at build time** (Next inlines `NEXT_PUBLIC_*`). Only used on the AFK page. Needs an approved AdSense account for `store.jacknetwork.in` and a `public/ads.txt`. Policy cautions given to the owner: never ask users to click ads, never auto-refresh ads; paying users for time-on-page is a grey area, paying for ad views/clicks is forbidden. **Not tested with real ads.** No CSP is configured, so the AdSense script loads.
 
-### 6.6 Catalog / ranks
-`src/lib/store.ts`: `catalog.practice.ranks` and `catalog.survival.ranks` are **empty** (`StoreItem {id,name,description,price,perks[],available}`); `Catalog` shows a dashed empty state, or cards with a disabled "Buy"/"Coming soon" button. **No purchase flow exists.** Intended design: debit via `adjust` with a **negative** amount + idempotency key, then grant the rank in-game (needs a plugin/console hook — undecided). Buy Coins has no payment provider.
+### 6.6 Catalog / ranks + purchase delivery
+`src/lib/store.ts`: `catalog.practice.ranks` and `catalog.survival.ranks` are **empty** (`StoreItem {id,name,description,price,perks[],available,command}`) — the owner fills them in later. `Catalog` shows a dashed empty state, or cards with `BuyButton` (`components/store/buy-button.tsx`): a disabled "Coming soon" when `available:false`, otherwise a Buy button. Buy Coins still has no payment provider (real money) — **coin purchases do not need one**: `price` is in coins and is debited from the economy bot.
+
+**The purchase flow now exists** (`POST /api/purchase` + `Purchase` model + JackLink Paper delivery):
+
+1. Buy click generates a browser-side `idem` (UUID, `crypto.randomUUID`) and posts `{mode, itemId, idem}`.
+2. The route validates session → item exists → `available && command` non-empty → `serverFor(mode)` → **MinecraftLink** (uuid+username, else `unlinked`) → Discord account → `fetchBalance ≥ price` (else `insufficient`). Every refusal happens **before any coins move**.
+3. A `Purchase` row is written in status `charging` with that `idem` (unique). Re-posting the same `idem` finds the row instead of buying twice, so a network retry cannot double-charge.
+4. `adjustCoins(discordId, -price, "Store: <name>", "purchase:" + idem)` — the bot's own idempotency key. Success → row `pending` (+ `recordAudit({kind:"purchase"})`); failure → row `failed`, nothing granted.
+5. Only `pending` rows are ever handed to a plugin, so a crash between the row write and the debit can never give an item away for free.
+6. Each Paper backend polls `GET /api/purchase/pending?server=<name>` every `deliver-seconds` (5), **holds rows until the buyer is online on that server** (you chose: never fail just because they are offline), runs `Bukkit.dispatchCommand(console, command)` on the main thread with `{username}`/`{uuid}` already substituted, then `POST /api/purchase/ack` off-thread. A failed run is retried up to 5 attempts then marked `failed`.
+7. `store.servers` maps catalogue → Velocity server name (`practice → practice`, `survival → survival`); the Paper jar's `server-name` must match exactly.
+
+**Still the owner's to supply:** the actual items, their prices and their `command` templates. Until an item has `command` + `available:true`, nothing is buyable and the empty state shows.
 
 ---
 
@@ -193,13 +208,13 @@ src/lib/coins-api.ts         server client for the economy API
 src/lib/login-url.ts, mc-link.ts, copy.ts, prisma.ts
 src/app/layout.tsx           fonts, theme init script, JSON-LD, Providers (SessionProvider)
 src/app/globals.css          ALL tokens + utilities + 3D + keyframes (831 lines)
-src/app/api/**               auth, server, coins, link, link/confirm, afk
+src/app/api/**               auth, server, coins, link, link/confirm, unverify, link/unconfirm, afk, purchase (+pending/ack)
 src/app/store/**             store layout + pages
 src/components/*             site-header (mobile menu), site-footer, hero-emblem, hero-scene (+SceneScrim),
                              page-hero, section-heading, practice-pvp-section, survival-section, action-link,
                              copy-address, status-pill, server-status, faq-item, reveal, tilt-panel,
                              theme-toggle, auth-nav, auth-buttons, json-ld, session-provider
-src/components/store/*       store-header, store-footer, coins-dialog, use-coins, catalog, coin-icon, afk-client, ad-slot
+src/components/store/*       store-header, store-footer, coins-dialog, use-coins, catalog, buy-button, coin-icon, afk-client, ad-slot
 prisma/schema.prisma         User, Account, Session, VerificationToken, MinecraftLink, AfkState
 scripts/init-db.mjs          raw-SQL table creation (must mirror schema.prisma)
 scripts/qa.mjs, qa-simple.mjs  Playwright responsive QA helpers (qa.mjs targets 320/360/375/390/414/768/1024/1280/1440; defaults to http://127.0.0.1:3100, output /tmp/qa)
@@ -232,8 +247,10 @@ Owner said "Leave it, store is working" — so DNS/hosting is evidently already 
 
 **Unverify + secret audit ledger — added and verified this session [verified].** New page `/unverify` (`app/unverify/page.tsx` + `components/unverify-card.tsx`) mirroring the link card: signed-out → Discord sign-in, linked → mint a 6-char code, `/unverify CODE` in game, 10-minute countdown, live 4s polling until the link is cut. New routes `GET/POST /api/unverify` (session) and `POST /api/link/unconfirm` (Bearer; 404 unknown/expired, 403 wrong account). `MinecraftLink` gained `unverifyCode`/`unverifyCodeExpires` via guarded `ALTER TABLE` + a post-ALTER unique index (an index on an ALTER-added column cannot go in the main `STATEMENTS` batch — it would abort on an existing database). JackLink Velocity gained the `/unverify <code>` command and now answers an already-linked `/link` with a private message pointing at `jacknetwork.in/unverify` (`messages.link-already`, `website.unverify-url`). Secret ledger `AuditEvent` (`src/lib/audit.ts`) stamps every verify/unverify — and, later, purchase — with a generated `refId`; **no route reads it back**. QA: `.qa/unverify-test.mjs` 30/30, `.qa/unverify-visual.mjs` 18/18 (desktop + mobile, no overflow, countdown starts 9:59), `tsc`/`eslint`/`next build` clean, `mvn package` clean.
 
+**Purchase → in-game delivery — added and verified this session [verified].** New model `Purchase` (`prisma/schema.prisma` + `scripts/init-db.mjs` table + `server,status` and `userId,createdAt` indexes) and three routes: `POST /api/purchase` (session, idempotent on a client `idem`, refuses before charging when the item is not live / has no command / the account is unlinked / the balance is short), `GET /api/purchase/pending?server=` and `POST /api/purchase/ack` (both Bearer). New `components/store/buy-button.tsx` owns the whole price+Buy+message block and fires `jn:coins-refresh` on success; `store.ts` gained `command` on `StoreItem`, a `servers` map and `serverFor()`. JackLink `jacklink-api` gained `Purchase` + `pendingPurchases()`/`ackPurchase()`; JackLink Paper gained a delivery poller (`server-name`, `deliver-seconds`, runs the command as console on the main thread, acks off-thread) — **and is now required on any backend that should hand out a bought item**, not only on backends that show coins. `AuditEvent` is written on every purchase (kind `purchase`), still never read back by any route. QA: `.qa/purchase-test.mjs` **45/45** (validation, charge, command rendering, idempotent retry does not charge twice, insufficient, pending filter by server, ack retry ladder 1→4 pending / 5th failed, delivered leaves the queue, ack on a settled row does not resurrect it) and `.qa/purchase-visual.mjs` **8/8** at 1440 and 390 (no overflow, ≥44px tap target, live "Paid…" and "Not enough coins…" messages, header balance dropping 12,200 → 11,700 after a purchase). Regressions: `.qa/link-api-test.mjs` 22/22, `.qa/afk-test.mjs` 45/45, `tsc`/`eslint`/`next build` clean, `mvn clean package` clean.
+
 **Intentionally disabled / placeholder:** rank catalogs (empty — waiting on the owner), Buy Coins (no payment provider), AdSense (env-gated, not tested with real ads).
-**Not built:** rank purchase flow; payment provider; leaderboard; anything not listed here. (There is **no purchase/checkout code at all** — no Stripe/Tebex, no orders table; `AuditEvent` is ready for it via `kind: "purchase"` but nothing writes that kind yet.)
+**Not built:** payment provider for Buy Coins (real money); leaderboard; anything not listed here. (Purchase **delivery** is built — see §6.6 — but no item ships with `available: true`, so nothing is buyable until the owner fills in the catalogue. The "not built" list no longer contains the purchase flow.)
 **Cosmetic fixes this session [verified]:** the AFK ring drew a stray crimson dot at 0% (round line-cap on a zero-length dash) — fixed; the page said "Next coins in 59s" while idle — now "Press start to earn".
 
 **404 page — simplified this session [verified].** `src/app/not-found.tsx` lost `SiteHeader`/`SiteFooter` and the "Error" kicker; it is now just `404`, one line, and a `jn-btn jn-btn-primary` "Go home". This also fixes a real bug: the file is shared by **both** hosts, so a bad URL on `store.jacknetwork.in` used to render the *marketing* header. Verified on main and store hosts at 1440 and 390: no header/footer, no horizontal overflow, button 48px tall (≥44px tap target). "Go home" links to `/`, which the proxy maps to the correct home per host.
@@ -287,7 +304,7 @@ Suggested order: ~~(0) restart the app~~ / ~~(1) set `JN_COINS_API_URL=power2.ve
 **New store page:** create `src/app/store/<name>/page.tsx` (layout supplies header/footer), use the `jn-dark` + glow + grain header pattern from `store/afk/page.tsx`, add `"/<name>"` to the `proxy.ts` matcher, link it from the hub/dialog, add `metadata.alternates.canonical = ${store.url}/<name>`.
 **New API route:** `src/app/api/<x>/route.ts`, `auth()` first, return JSON `{state, ...}`, never expose secrets, no `dynamic` export.
 **New model:** schema + `init-db.mjs` (+ ALTER if table exists) + `npx prisma generate`.
-**New rank:** push an item into `catalog.<mode>.ranks` in `src/lib/store.ts` (`available:true` only when a purchase flow exists).
+**New rank:** push an item into `catalog.<mode>.ranks` in `src/lib/store.ts` with a non-empty `command` (`{username}`/`{uuid}` placeholders) and only then `available:true` — the route refuses a purchase with a blank command before charging anything. The catalogue must also appear in `store.servers` (see `serverFor`), and the Paper backend that runs it must have `server-name` set to the same value.
 **Always:** tokens not hex; `text-accent-ink` for small crimson; reduced-motion; 44px targets; screenshot at 1440 and 390 before saying done.
 
 ---
@@ -314,6 +331,10 @@ Helper scripts used during this work live in `handover-tools/` (tracked, paths p
 - `.qa/afk-live4.mjs` — real Chromium session: Start, wait for two heartbeats, print the award.
 - `.qa/shoot-store2.mjs`, `.qa/shoot-main.mjs` — screenshots at 1440 and 390 into `/tmp/opencode/jn/shots`.
 - `.qa/extract-balance-test.mjs` — `extractBalance` behaviour matrix (needs `tsc` compile first; see the file).
+- `.qa/purchase-test.mjs` — 45 assertions: charge, idempotent retry, insufficient, pending filter by server, ack ladder, delivered. Requires the four temporary QA items documented in its header (add to `store.ts`, rebuild, then revert).
+- `.qa/purchase-visual.mjs` — 8 assertions + screenshots at 1440 and 390 for the Buy button (same QA-item fixture).
+
+Note: `http://store.localhost:<port>` does not resolve in this image — add `127.0.0.1 store.localhost` to `/etc/hosts` first (the Playwright scripts rely on it).
 
 These are **ephemeral test tooling, not part of the app.** In this sandbox Chromium only runs via the `chromium_headless_shell-1243` binary (the `-1248` build traps under proot); the scripts already point at it. Build with `PRISMA_SCHEMA_ENGINE_BINARY=/bin/true` and `npx next build` directly.
 
@@ -334,11 +355,12 @@ Your tasks, in order:
 1. Fix /api/afk: add an integer `version` column (schema.prisma + guarded ALTER in scripts/init-db.mjs), compare-and-set on it, then test end to end against a mock coins API (balance + adjust with idempotency keys): +2 coins/minute, same key never double-credits, second tab -> other-tab, daily cap -> capped. Screenshot /afk at 1440 and 390 and inspect them.
 2. Diagnose the live "Coins: —": use /api/coins `reason` and server logs; tighten extractBalance once the real response shape is known (ask the owner for one sample JSON of the balance and adjust endpoints, with the token redacted).
 3. Add JN_COINS_ADJUST_URL, JN_AFK_RATE, JN_AFK_DAILY_CAP, NEXT_PUBLIC_ADSENSE_CLIENT, NEXT_PUBLIC_ADSENSE_SLOT to .env.example; update stale "store opens soon"/"coming soon" copy honestly in site.ts, llms.txt and the login page; fix the README's rules.txt reference.
-4. Only after the owner supplies rank names, prices (in coins), perks and how ranks are granted in game: fill catalog.practice.ranks / catalog.survival.ranks in src/lib/store.ts and build the purchase flow (POST adjust with a NEGATIVE amount + idempotency key, then grant).
-5. JackLink plugin (Velocity + Paper) is DONE and pushed to github.com/email404com-jpg/JackLink (private). Jars: JackLink-Velocity.jar (proxy: /verify, /link <code>, /unverify <code>, /coins + the /status reporter) and JackLink-Paper.jar (PlaceholderAPI expansion %jack_coins% for DeluxeHub sidebars). Website-side plugin API (GET /api/link/status, GET /api/link/coins, POST /api/link/confirm, POST /api/link/unconfirm, POST /api/server/report — all Bearer JN_LINK_API_KEY) plus LinkEvent and the secret AuditEvent ledger are already live.
-   **Deployment is NOT "the same jar on all four servers"** — there are two different, mutually exclusive jars and no runtime platform detection: JackLink-Velocity.jar goes ONLY on the Velocity proxy (it carries all four commands and the status reporter); JackLink-Paper.jar goes on each backend that shows a coin scoreboard (lobby minimum; practice/survival only if they use %jack_coins%); a backend with no coin display needs neither. Every jar you install gets the SAME api.key (= JN_LINK_API_KEY) and api.base-url.
-   Also live: the /unverify page + flow, and the AuditEvent ledger (generated refId per verify/unverify, never exposed — add `kind:"purchase"` calls when a purchase flow exists; none does yet).
-   To deploy: drop the jars as above, set api.key in plugins/jacklink/config.yml (Velocity) and plugins/JackLink/config.yml (Paper), use %jack_coins% in DeluxeHub config. Payment provider for Buy Coins is still pending.
+4. Only the owner can finish this: fill `catalog.practice.ranks` / `catalog.survival.ranks` in `src/lib/store.ts` with the real names, prices (in coins), perks and `command` templates (`lp user {username} parent add vip` / `give {username} diamond 16` …), then set `available: true`. **The purchase flow itself is already built and verified** (§6.6) — adding an item with a `command` and `available: true` makes it buyable immediately.
+5. JackLink plugin (Velocity + Paper) is DONE and pushed to github.com/email404com-jpg/JackLink (private). Jars: JackLink-Velocity.jar (proxy: /verify, /link <code>, /unverify <code>, /coins + the /status reporter) and JackLink-Paper.jar (PlaceholderAPI expansion %jack_coins% for DeluxeHub sidebars **and** the purchase delivery poller). Website-side plugin API (GET /api/link/status, GET /api/link/coins, POST /api/link/confirm, POST /api/link/unconfirm, POST /api/server/report, GET /api/purchase/pending, POST /api/purchase/ack — all Bearer JN_LINK_API_KEY) plus LinkEvent and the secret AuditEvent ledger are already live.
+   **Deployment is NOT "the same jar on all four servers"** — there are two different, mutually exclusive jars and no runtime platform detection: JackLink-Velocity.jar goes ONLY on the Velocity proxy (it carries all four commands and the status reporter); JackLink-Paper.jar goes on each backend that shows a coin scoreboard **or** must hand out bought items (lobby minimum; practice and survival if either shows %jack_coins% or sells ranks — so in practice Paper goes on all three backends while the proxy gets Velocity: four servers, two jar *types*); a backend that does neither needs no jar. Every jar you install gets the SAME api.key (= JN_LINK_API_KEY) and api.base-url. On Paper also set `server-name` (must equal the website's `store.servers` entry for that backend — `practice`/`survival`) or delivery is skipped with a startup warning.
+   **How each server fetches coins:** the proxy only fetches when a player runs a proxy command (`/coins` etc. — Velocity's command manager is proxy-global, so those work from every backend); each Paper jar fetches one balance per **online** player every `refresh-seconds` (10) from an async task, never during a scoreboard render. The website caches the bot call for 2 s, and the bot allows 120 reads/min per token — raise `refresh-seconds` to 30 on a busy network instead of hammering it.
+   Also live: the /unverify page + flow, and the AuditEvent ledger (generated refId per verify/unverify/purchase, never exposed by any route).
+   To deploy: drop the jars as above, set api.key in plugins/jacklink/config.yml (Velocity) and plugins/JackLink/config.yml (Paper), set `server-name` on Paper, use %jack_coins% in DeluxeHub config. Payment provider for Buy Coins is still pending.
 
 Follow the QA loop for any visual change (build, run, screenshot at 1440 and 390, inspect, fix), run `npx tsc --noEmit` and `npx eslint src`, and report honestly what you verified and what you could not.
 ```

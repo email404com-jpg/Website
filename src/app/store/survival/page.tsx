@@ -35,7 +35,7 @@ export default function Page() {
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-8 sm:py-24">
         <h2 className="font-display mb-8 text-4xl font-black text-fg sm:text-5xl">Ranks</h2>
-        <Catalog items={store.catalog.survival.ranks} mode="Survival" />
+        <Catalog items={store.catalog.survival.ranks} mode="Survival" categoryId="survival" />
       </section>
     </>
   );

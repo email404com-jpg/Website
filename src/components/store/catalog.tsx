@@ -1,7 +1,15 @@
-import type { StoreItem } from "@/lib/store";
-import { CoinGlyph } from "./coin-icon";
+import type { CatalogId, StoreItem } from "@/lib/store";
+import { BuyButton } from "./buy-button";
 
-export function Catalog({ items, mode }: { items: readonly StoreItem[]; mode: string }) {
+export function Catalog({
+  items,
+  mode,
+  categoryId,
+}: {
+  items: readonly StoreItem[];
+  mode: string;
+  categoryId: CatalogId;
+}) {
   return (
     <div>
       {items.length === 0 ? (
@@ -31,15 +39,12 @@ export function Catalog({ items, mode }: { items: readonly StoreItem[]; mode: st
                   </li>
                 ))}
               </ul>
-              <div className="mt-auto flex items-center justify-between gap-3 pt-6">
-                <span className="inline-flex items-center gap-2 font-mono text-lg font-semibold text-fg">
-                  <CoinGlyph className="h-5 w-5 text-accent-ink" />
-                  {item.price.toLocaleString("en-US")}
-                </span>
-                <button type="button" disabled={!item.available} className="jn-btn jn-btn-primary !min-h-11 disabled:cursor-not-allowed disabled:opacity-40">
-                  {item.available ? "Buy" : "Coming soon"}
-                </button>
-              </div>
+              <BuyButton
+                mode={categoryId}
+                itemId={item.id}
+                available={item.available}
+                price={item.price}
+              />
             </li>
           ))}
         </ul>

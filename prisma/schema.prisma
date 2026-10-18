@@ -47,6 +47,7 @@ model User {
   afk      AfkState?
   linkEvents LinkEvent[]
   auditEvents AuditEvent[]
+  purchases Purchase[]
 }
 
 model VerificationToken {
@@ -142,4 +143,41 @@ model ServerStatus {
   /// Raw JSON: { online, players:{online,max?}, version, servers:[{name,online}] }
   payload   String
   updatedAt DateTime @updatedAt
+}
+
+/// A coin purchase queued for in-game delivery.
+///
+/// Flow: `charging` (row written, debit in flight) -> `pending` (coins taken,
+/// command ready) -> `delivered` (the Paper jar ran it) | `failed`.
+///
+/// Only `pending` rows are ever handed to a plugin, so a crash between the row
+/// write and the debit can never give an item away for free. The plugin
+/// identifies a row by `id` — the secret ledger ID lives in `AuditEvent.refId`
+/// and is never returned by any route.
+model Purchase {
+  id       String  @id @default(cuid())
+  /// Client-supplied key: retrying the same click reuses the same row and
+  /// therefore cannot charge twice.
+  idem     String  @unique
+  userId   String
+  itemId   String
+  /// practice | survival
+  mode     String
+  /// Velocity server name the command runs on (`serverFor(mode)`).
+  server   String
+  uuid     String
+  username String
+  /// Console command, already rendered with the buyer's uuid/username.
+  command  String
+  /// charging | pending | delivered | failed
+  status   String  @default("charging")
+  attempts Int     @default(0)
+  error    String?
+  createdAt DateTime @default(now())
+  deliveredAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([server, status])
+  @@index([userId, createdAt])
 }
