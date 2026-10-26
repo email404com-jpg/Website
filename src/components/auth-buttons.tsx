@@ -2,15 +2,21 @@
 
 import { signIn, signOut } from "next-auth/react";
 
-export function SignInButton({ compact = false }: { compact?: boolean }) {
+export function SignInButton({
+  compact = false,
+  callbackUrl,
+}: {
+  compact?: boolean;
+  callbackUrl?: string;
+}) {
   return (
     <button
       type="button"
       onClick={() => {
-        const callbackUrl =
+        const cb =
           new URLSearchParams(window.location.search).get("callbackUrl") ??
-          undefined;
-        void signIn("discord", callbackUrl ? { callbackUrl } : undefined);
+          callbackUrl;
+        void signIn("discord", cb ? { callbackUrl: cb } : undefined);
       }}
       className="jn-btn jn-btn-ghost !min-h-11 !px-4 hover:!border-accent sm:!px-5"
     >

@@ -333,6 +333,8 @@ Helper scripts used during this work live in `handover-tools/` (tracked, paths p
 - `.qa/extract-balance-test.mjs` — `extractBalance` behaviour matrix (needs `tsc` compile first; see the file).
 - `.qa/purchase-test.mjs` — 45 assertions: charge, idempotent retry, insufficient, pending filter by server, ack ladder, delivered. Requires the four temporary QA items documented in its header (add to `store.ts`, rebuild, then revert).
 - `.qa/purchase-visual.mjs` — 8 assertions + screenshots at 1440 and 390 for the Buy button (same QA-item fixture).
+- `.qa/link-otp-test.mjs` — 34 assertions for the game-minted code API (`/api/link/mint` → `/api/link/redeem`: auth, rotation, expiry, 409s, LinkEvent/AuditEvent rows).
+- `.qa/link-anim-test.mjs` — 55 assertions + screenshots (`.qa/shot-link-*.png`) for `/link`: failure and success flows at 1440/390/320, reduced-motion, signed out.
 
 Note: `http://store.localhost:<port>` does not resolve in this image — add `127.0.0.1 store.localhost` to `/etc/hosts` first (the Playwright scripts rely on it).
 
@@ -340,7 +342,21 @@ These are **ephemeral test tooling, not part of the app.** In this sandbox Chrom
 
 ---
 
-## 12. Ready-to-use prompt for the next agent
+## 12. /link — OTP entry with the convergence verification animation
+
+**What it is.** The account-linking page (`/link`) where a player redeems the 6-char code minted in game. Game-first flow: the Velocity plugin will call `POST /api/link/mint` (Bearer `JN_LINK_API_KEY`, `{uuid, username}`) when a player runs bare `/link`; the player then signs in on `/link` and the site redeems the code via `POST /api/link/redeem` (session). One active code per uuid (mint rotates it), 10-min TTL, single use, refuses while already linked (unlink first via `/unverify`). New model `McLinkPending` lives in `prisma/schema.prisma` **and** `scripts/init-db.mjs` (unique `uuid`, unique `code`).
+
+**Files:** `src/components/otp-verify.tsx` (the animation, `OtpVerify` props: `onVerify` promise → only the real API result drives success/failure, plus `onSuccess`/`onRetry`), `src/components/link-otp-card.tsx` (session gate, status card, wires the API), `src/app/link/page.tsx` (PageHero skeleton), `src/app/api/link/mint|redeem/route.ts`. `SignInButton` now takes an optional `callbackUrl`; `/link` is in `sitemap.ts`.
+
+**The motion** (no reference video was supplied — implemented from the written spec): digits fly from their boxes to the centre of the *visible* viewport (keyboard-aware via `visualViewport`), rotating ±(180+i·45)° and scaling to 0.5 (expo-out, 45 ms stagger) while the boxes fade; a 96 px merge square lands with a soft overshoot as the clones arrive and breathes while the promise is pending; the verdict is revealed only after the merge completes, never mid-flight. Pass = green `pathLength` draw check + 10-shard burst; fail = cross draw + shake; failure then reverses (clones fly home, boxes re-measure first in case the keyboard moved, digits clear, `onRetry` refocuses). Holds: 1.75 s fail, 1.9 s pass. `prefers-reduced-motion` swaps travel/particles/shake for short fades. Root element exposes `data-phase` / `data-complete` for tests.
+
+**Gotchas found the hard way:** `"abc".includes("") === true` — completeness must check the slots (`digits.every`), not the joined string; the code alphabet is A-Z+2-9 so the input must accept letters (a digits-only filter silently breaks every real code); `MinecraftLink.userId` is UNIQUE (one link per user); a plugin-minted `code_issued` has no userId yet, so it lands in `AuditEvent` only, while redeem writes `LinkEvent` (`linked`, source web) + audit mirror.
+
+**Verified:** `.qa/link-otp-test.mjs` 34/34, `.qa/link-anim-test.mjs` 55/55 (failure→restore→success on one page, 1440/390/320, reduced-motion, signed-out, zero console errors), `tsc --noEmit` + `eslint src` clean, screenshots inspected. **Not done:** the Velocity plugin does not call `/api/link/mint` yet (bare `/link` still needs `api.mintLink()` + a `link-url` config), and the Paper-side LuckPerms rank grant on link (`link.rank` config) is still pending.
+
+---
+
+## 13. Ready-to-use prompt for the next agent
 
 Copy everything between the lines.
 

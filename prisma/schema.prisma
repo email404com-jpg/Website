@@ -76,6 +76,19 @@ model MinecraftLink {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+/// Game-minted one-time link codes (player runs bare `/link` in game, then
+/// signs in on /link and redeems the code here). Keyed by the Minecraft uuid —
+/// the Discord user is only known once they redeem.
+model McLinkPending {
+  id          String   @id @default(cuid())
+  uuid        String   @unique
+  username    String?
+  /// One-time code, 10 min TTL, bound to this uuid until redeemed.
+  code        String   @unique
+  codeExpires DateTime?
+  createdAt   DateTime @default(now())
+}
+
 /// Audit trail of the Minecraft link lifecycle, tied to the Discord user:
 /// code_issued | linked | link_refused | unlinked (source: web | plugin).
 model LinkEvent {

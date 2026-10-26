@@ -79,6 +79,18 @@ const STATEMENTS = [
   `CREATE UNIQUE INDEX IF NOT EXISTS "MinecraftLink_uuid_key" ON "MinecraftLink"("uuid")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "MinecraftLink_code_key" ON "MinecraftLink"("code")`,
 
+  // Game-minted /link codes (bare /link in game -> redeem on /link on the site).
+  `CREATE TABLE IF NOT EXISTS "McLinkPending" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "uuid" TEXT NOT NULL,
+    "username" TEXT,
+    "code" TEXT NOT NULL,
+    "codeExpires" TEXT,
+    "createdAt" TEXT NOT NULL
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "McLinkPending_uuid_key" ON "McLinkPending"("uuid")`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "McLinkPending_code_key" ON "McLinkPending"("code")`,
+
   `CREATE TABLE IF NOT EXISTS "LinkEvent" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "userId" TEXT NOT NULL,
