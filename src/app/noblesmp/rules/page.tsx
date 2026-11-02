@@ -92,7 +92,7 @@ export default function NobleSmpRulesPage() {
               className={styles.ip}
             >
               <span className={styles.ipLabel}>IP</span>
-              noblesmp.mcsh.io
+              play.noblesmp.cyou
             </a>
           </div>
         </section>

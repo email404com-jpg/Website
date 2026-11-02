@@ -12,7 +12,7 @@ const MENU_LINKS = [
 ];
 
 const DISCORD_URL = 'https://dsc.gg/noblesmp';
-const SERVER_IP = 'noblesmp.mcsh.io';
+const SERVER_IP = 'play.noblesmp.cyou';
 
 const TAGLINE = ['Forged', 'in', 'amethyst.', 'Ruled', 'by', 'the', 'whitelist.'];
 
