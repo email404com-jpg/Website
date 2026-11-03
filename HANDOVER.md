@@ -99,7 +99,7 @@ Other tokens: `--duration-fast`/`--duration`/`--duration-slow` (120/200/320ms), 
 | `/login` | `app/login/page.tsx` | Discord sign-in page; honors `?callbackUrl=` |
 | `/unverify` | `app/unverify/page.tsx` | Cut the Minecraft link. Signed-out → Discord sign-in; linked → `UnverifyCard` mints a 6-char code (`/unverify CODE`, 10 min) redeemed in game |
 | `not-found`, `icon.png`, `apple-icon.png`, `robots.ts`, `sitemap.ts` | | sitemap lists `/`, `/coins`, `/status`, `/faq`, `/rules`, `/terms`, `/login`, `/unverify` |
-| `public/llms.txt`, `og.png`, `logo-jn*.{png,webp}`, `media/*.webp` | | `json-ld.tsx` emits Organization + WebSite JSON-LD in `<head>` |
+| `public/llms.txt`, `og.webp`, `logo-jn*.{png,webp}`, `media/*.webp` | | `json-ld.tsx` emits Organization + WebSite JSON-LD in `<head>` |
 
 ### Store host (`store.jacknetwork.in`) — files live under `src/app/store/*`
 | Public path | Internal | File |
@@ -218,7 +218,7 @@ src/components/store/*       store-header, store-footer, coins-dialog, use-coins
 prisma/schema.prisma         User, Account, Session, VerificationToken, MinecraftLink, AfkState
 scripts/init-db.mjs          raw-SQL table creation (must mirror schema.prisma)
 scripts/qa.mjs, qa-simple.mjs  Playwright responsive QA helpers (qa.mjs targets 320/360/375/390/414/768/1024/1280/1440; defaults to http://127.0.0.1:3100, output /tmp/qa)
-public/                      llms.txt, og.png, logos, media/{hero-mountains,practice-nether,survival-taiga}.webp
+public/                      llms.txt, og.webp, logos, media/{hero-mountains,practice-nether,survival-taiga}.webp
 ```
 `README.md` says `rules.txt` is the binding brief, but **no `rules.txt` exists in the repo** [verified] — treat the design brief summarized in §3 and this file as binding; fix the README line.
 

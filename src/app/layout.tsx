@@ -54,13 +54,13 @@ export const metadata: Metadata = {
     title,
     description: site.description,
     locale: "en_US",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: site.name }],
+    images: [{ url: "/og.webp", width: 1200, height: 630, alt: site.name }],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description: site.description,
-    images: ["/og.png"],
+    images: ["/og.webp"],
   },
   robots: { index: true, follow: true },
 };
