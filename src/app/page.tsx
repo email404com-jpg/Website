@@ -221,7 +221,7 @@ export default function Home() {
         <section id="server" className="relative border-b border-line bg-surface">
           <div className="mx-auto max-w-7xl px-4 py-24 sm:px-8 sm:py-32">
             <div className="grid gap-14 lg:grid-cols-12 lg:gap-16">
-              <div className="lg:col-span-6">
+              <div className="lg:col-span-6 min-w-0">
                 <Reveal>
                   <Eyebrow tone="accent">{site.connect.kicker}</Eyebrow>
                   <h2 className="font-display mt-6 text-[clamp(2.9rem,7vw,5.5rem)] leading-[0.86] font-black tracking-[0.005em] text-balance text-fg">
@@ -256,7 +256,7 @@ export default function Home() {
                 </Reveal>
               </div>
 
-              <Reveal className="lg:col-span-6" delay={120}>
+              <Reveal className="lg:col-span-6 min-w-0" delay={120}>
                 <div className="lg:sticky lg:top-24">
                   {/* the one primary address block on the page */}
                   <div className="relative border border-line-strong bg-background p-6 sm:p-8">

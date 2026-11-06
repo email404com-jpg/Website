@@ -38,13 +38,13 @@ const SPECS = [
   { label: 'Economy', value: 'No Pay To Win' },
 ];
 
-// In-game capture photos live in public/ (next to noblesmp-logo.png).
-// Expected paths: /image-01.jpg, /image-02.jpg, /image-03.jpg, /image-04.jpg
+// In-game capture photos live in public/ (next to noblesmp-logo.webp).
+// Expected paths: /image-01.webp, /image-02.webp, /image-03.webp, /image-04.webp
 const GALLERY = [
-  { src: '/image-01.jpg', name: 'image-01', alt: 'Noble SMP in game screenshot 01' },
-  { src: '/image-02.jpg', name: 'image-02', alt: 'Noble SMP in game screenshot 02' },
-  { src: '/image-03.jpg', name: 'image-03', alt: 'Noble SMP in game screenshot 03' },
-  { src: '/image-04.jpg', name: 'image-04', alt: 'Noble SMP in game screenshot 04' },
+  { src: '/image-01.webp', name: 'image-01', alt: 'Noble SMP in game screenshot 01' },
+  { src: '/image-02.webp', name: 'image-02', alt: 'Noble SMP in game screenshot 02' },
+  { src: '/image-03.webp', name: 'image-03', alt: 'Noble SMP in game screenshot 03' },
+  { src: '/image-04.webp', name: 'image-04', alt: 'Noble SMP in game screenshot 04' },
 ];
 
 /**
@@ -116,7 +116,7 @@ function TiltFrame() {
         <span className={styles.cornerBR} aria-hidden="true" />
         <div className={styles.frameInner}>
           <Image
-            src="/noblesmp-logo.png"
+            src="/noblesmp-logo.webp"
             alt="Noble SMP crest - a gold crown over stone Noble SMP lettering with an amethyst sword, set against a purple Minecraft night sky"
             width={760}
             height={760}
