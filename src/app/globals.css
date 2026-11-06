@@ -752,6 +752,34 @@ textarea {
   );
 }
 
+/* ── Skeleton loading placeholders (loading.tsx states) ── */
+.jn-skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--surface-raised);
+  border: 1px solid var(--line);
+}
+
+.jn-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--fg) 7%, transparent),
+    transparent
+  );
+  animation: jn-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes jn-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* ── Reduced motion: keep layout, drop movement ── */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -765,6 +793,7 @@ textarea {
   .jn-spec,
   .jn-orbit-ring,
   .jn-shard,
+  .jn-skeleton::after,
   .jn-enter,
   .jn-enter-fade {
     animation: none !important;
